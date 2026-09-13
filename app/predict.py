@@ -9,7 +9,7 @@ import pandas as pd
 
 from features.build import FEATURE_COLUMNS, VOCATION_BASE
 from features.high_value import HV_FEATURE_COLUMNS, extract_high_value_features
-from model.train import load_bundle, predict_row
+from model.infer import load_bundle, predict_row
 from scrape.detail_parser import parse_detail_html
 from scrape.http import RateLimitedSession, auction_detail_url
 

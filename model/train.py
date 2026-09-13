@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 import joblib
-import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
@@ -134,6 +133,7 @@ def train_models(
     random_state: int = 42,
     meta: pd.DataFrame | None = None,
 ) -> dict[str, Any]:
+    import lightgbm as lgb
     models_dir.mkdir(parents=True, exist_ok=True)
     n = len(X)
     bins = _log_bid_bins(y, n_bins=5)
@@ -275,39 +275,10 @@ def train_models(
 
 
 def load_bundle(models_dir: Path) -> dict[str, Any]:
-    return joblib.load(models_dir / "model_bundle.joblib")
+    from model.infer import load_bundle as _load
+    return _load(models_dir)
 
 
 def predict_row(bundle: dict[str, Any], feature_row: dict[str, float]) -> dict[str, Any]:
-    cols = bundle["feature_columns"]
-    x = pd.DataFrame([{c: float(feature_row.get(c, 0.0) or 0.0) for c in cols}])
-    lgbm = bundle["lgbm"]
-    ridge = bundle["ridge"]
-    pred_log = float(lgbm.predict(x)[0])
-    ridge_log = float(ridge.predict(x)[0])
-    point = float(np.expm1(pred_log))
-    low = point * 0.75
-    high = point * 1.35
-    baseline = float(np.expm1(lgbm.predict(pd.DataFrame([{c: 0.0 for c in cols}]))[0]))
-    drivers = []
-    importances = getattr(lgbm, "feature_importances_", None)
-    if importances is not None:
-        ranked = sorted(zip(cols, importances, x.iloc[0].tolist()), key=lambda t: -t[1])
-        for name, imp, val in ranked[:8]:
-            if abs(val) > 0 or imp > 0:
-                drivers.append({"feature": name, "value": val, "importance": int(imp)})
-    # Display-only gold equivalent (1 TC ≈ 41_000 gold). Not used in training.
-    GOLD_PER_TC = 41_000
-    return {
-        "fair_price": point,
-        "fair_price_low": low,
-        "fair_price_high": high,
-        "ridge_price": float(np.expm1(ridge_log)),
-        "baseline_zero_features_price": baseline,
-        "drivers": drivers,
-        "pred_log": pred_log,
-        "gold_per_tc": GOLD_PER_TC,
-        "fair_price_gold_equiv": point * GOLD_PER_TC,
-        "fair_price_low_gold_equiv": low * GOLD_PER_TC,
-        "fair_price_high_gold_equiv": high * GOLD_PER_TC,
-    }
+    from model.infer import predict_row as _predict
+    return _predict(bundle, feature_row)

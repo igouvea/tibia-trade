@@ -1,0 +1,12 @@
+samples/**
+models/checkpoints/**
+models/model_bundle.joblib
+scripts/**
+scrape_list_page.py
+scout-report.md
+data/list_auctions.jsonl
+data/auctions.parquet
+data/error_diagnosis.md
+data/train_meta.csv
+**/*.md
+!README.md
