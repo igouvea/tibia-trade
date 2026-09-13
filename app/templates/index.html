@@ -1272,16 +1272,6 @@
       }
       const ridge = p.ridge_price != null ? Number(p.ridge_price) : null;
 
-      const xs = [];
-      if (hasFair) xs.push(lo, hi);
-      if (hasCI) xs.push(ciLo, ciHi);
-      xs.push(fair);
-      if (ref != null && Number.isFinite(ref)) xs.push(ref);
-      if (ridge != null && Number.isFinite(ridge)) xs.push(ridge);
-      const pad = Math.max((Math.max(...xs) - Math.min(...xs)) * 0.08, fair * 0.05, 50);
-      const xmin = Math.max(0, Math.min(...xs) - pad);
-      const xmax = Math.max(...xs) + pad;
-
       const traces = [];
       if (hasCI) {
         traces.push({
@@ -1329,8 +1319,8 @@
         font: { color: '#efe6d6', size: 11 },
         margin: { t: 28, r: 16, b: 36, l: 16 },
         height: 140, autosize: true,
-        xaxis: { range: [xmin, xmax], title: 'TC', zeroline: false,
-          gridcolor: 'rgba(255,255,255,0.06)', },
+xaxis: { autorange: true, title: 'TC', zeroline: false, rangemode: 'tozero',
+          gridcolor: 'rgba(255,255,255,0.06)' },
         yaxis: { visible: false, range: [0.35, 1.65], fixedrange: true },
         legend: { orientation: 'h', y: 1.28, x: 0, font: { size: 10 } },
         showlegend: true,
