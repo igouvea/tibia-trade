@@ -21,8 +21,12 @@ MODELS = ROOT / "models"
 app = FastAPI(title="Tibia Char Bazaar Fair Price", version="0.1.0")
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 static_dir = Path(__file__).parent / "static"
-static_dir.mkdir(exist_ok=True)
-app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+# Vercel’s function FS is read-only — never mkdir there.
+if static_dir.is_dir():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+elif not __import__("os").environ.get("VERCEL"):
+    static_dir.mkdir(exist_ok=True)
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 _df: pd.DataFrame | None = None
 _df_mtime: float | None = None
