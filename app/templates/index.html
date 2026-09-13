@@ -1243,10 +1243,11 @@
       const res = await fetch('/api/overview');
       const data = await res.json();
       const m = data.metrics || {};
-      const lgb = m.lightgbm || {};
+      const champName = m.champion || 'lightgbm';
+      const champ = (m.champion_metrics || m.models && m.models[champName] || m.lightgbm || {});
       document.getElementById('metric-pill').innerHTML =
-        `Model miss ~<strong>${lgb.MAE != null ? Math.round(lgb.MAE).toLocaleString() : '—'}</strong> TC` +
-        (lgb.MAPE != null ? ` · ${lgb.MAPE.toFixed(0)}%` : '') +
+        `Champion <strong>${champName}</strong> miss ~<strong>${champ.MAE != null ? Math.round(champ.MAE).toLocaleString() : '—'}</strong> TC` +
+        (champ.MAPE != null ? ` · ${champ.MAPE.toFixed(0)}%` : '') +
         (m.n_train != null ? `<br><span style="opacity:.8">trained on ${fmt(m.n_train)} sales</span>` : '');
       document.getElementById('overview-stats').innerHTML = `
         <div class="stat"><div class="label">Names in the book</div><div class="value">${fmt(data.n_rows)}</div></div>
@@ -1543,32 +1544,41 @@
       if (bn) bn.textContent = fmt(data.next_retrain_at);
 
       const xs = rows.map(r => r.n_enriched_sold);
-      const lgbMae = rows.map(r => (r.lightgbm || {}).MAE);
+      const liveM = r => r.champion_metrics || r.lightgbm || {};
+      const lgbMae = rows.map(r => liveM(r).MAE);
       const ridgeMae = rows.map(r => (r.ridge || {}).MAE);
-      const lgbMape = rows.map(r => (r.lightgbm || {}).MAPE);
+      const lgbMape = rows.map(r => liveM(r).MAPE);
       const ridgeMape = rows.map(r => (r.ridge || {}).MAPE);
-      const lgbR2 = rows.map(r => (r.lightgbm || {}).R2_price);
+      const lgbR2 = rows.map(r => liveM(r).R2_price);
       const ridgeR2 = rows.map(r => (r.ridge || {}).R2_price);
 
       const storyEl = document.getElementById('history-story');
       if (storyEl && rows.length) {
+        const live = r => r.champion_metrics || r.lightgbm || {};
         const first = rows[0], last = rows[rows.length - 1];
-        const fl = first.lightgbm || {}, ll = last.lightgbm || {};
+        const fl = live(first), ll = live(last);
         const dMae = (fl.MAE != null && ll.MAE != null) ? (ll.MAE - fl.MAE) : null;
         const dMape = (fl.MAPE != null && ll.MAPE != null) ? (ll.MAPE - fl.MAPE) : null;
         const dR2 = (fl.R2_price != null && ll.R2_price != null) ? (ll.R2_price - fl.R2_price) : null;
         const steps = rows.map(r => {
-          const l = r.lightgbm || {};
-          return `<li><strong>${r.checkpoint_label || r.note || 'craft'}</strong> · n=${fmt(r.n_enriched_sold)} · MAE ${l.MAE != null ? Math.round(l.MAE).toLocaleString() : '—'} TC · MAPE ${l.MAPE != null ? l.MAPE.toFixed(1) : '—'}% · R² ${l.R2_price != null ? l.R2_price.toFixed(3) : '—'}</li>`;
+          const l = live(r);
+          const who = r.champion ? ` · ${r.champion}` : '';
+          return `<li><strong>${r.checkpoint_label || r.note || 'craft'}</strong>${who} · n=${fmt(r.n_enriched_sold)} · MAE ${l.MAE != null ? Math.round(l.MAE).toLocaleString() : '—'} TC · MAPE ${l.MAPE != null ? l.MAPE.toFixed(1) : '—'}% · R² ${l.R2_price != null ? l.R2_price.toFixed(3) : '—'}</li>`;
         }).join('');
+        const board = (last.leaderboard || []).slice(0, 6).map((row, i) =>
+          `<li>${i === 0 ? '👑 ' : ''}<strong>${row.model}</strong> · MAE ${row.MAE != null ? Math.round(row.MAE).toLocaleString() : '—'} · MAPE ${row.MAPE != null ? row.MAPE.toFixed(1) : '—'}% · R² ${row.R2_price != null ? row.R2_price.toFixed(3) : '—'}</li>`
+        ).join('');
         storyEl.innerHTML = `
           <h3 style="margin:0 0 0.35rem;font-size:1rem">Craft chronicle</h3>
           <p class="ink-sm" style="margin-bottom:0.65rem">
-            From first fire to latest sharpening:
+            Champion track (lowest MAE):
             MAE ${dMae == null ? '—' : ((dMae <= 0 ? '↓ ' : '↑ ') + Math.abs(Math.round(dMae)).toLocaleString() + ' TC')},
             MAPE ${dMape == null ? '—' : ((dMape <= 0 ? '↓ ' : '↑ ') + Math.abs(dMape).toFixed(1) + ' pp')},
             R² ${dR2 == null ? '—' : ((dR2 >= 0 ? '↑ ' : '↓ ') + Math.abs(dR2).toFixed(3))}.
+            ${last.champion ? ' Living: <strong>' + last.champion + '</strong>.' : ''}
           </p>
+          ${board ? `<h3 style="margin:0.85rem 0 0.35rem;font-size:1rem">Living board</h3><ol class="ink-sm" style="margin:0;padding-left:1.2rem;line-height:1.55">${board}</ol>` : ''}
+          <h3 style="margin:0.85rem 0 0.35rem;font-size:1rem">Checkpoint trail</h3>
           <ol class="ink-sm" style="margin:0;padding-left:1.2rem;line-height:1.55">${steps}</ol>`;
       }
 
@@ -1587,17 +1597,17 @@
       const plotCfg = { responsive: true, displayModeBar: false, staticPlot: false };
 
       Plotly.newPlot('chart-hist-mae', [
-        { x: xs, y: lgbMae, name: 'LightGBM', mode: 'lines+markers', line: { color: '#7dba8a' }, cliponaxis: true },
+        { x: xs, y: lgbMae, name: 'Champion', mode: 'lines+markers', line: { color: '#7dba8a' }, cliponaxis: true },
         { x: xs, y: ridgeMae, name: 'Ridge', mode: 'lines+markers', line: { color: '#8faf9a' }, cliponaxis: true },
       ], plotLayout('Absolute miss as the ledger grows', 'MAE (TC)'), plotCfg);
 
       Plotly.newPlot('chart-hist-mape', [
-        { x: xs, y: lgbMape, name: 'LightGBM', mode: 'lines+markers', line: { color: '#c9a227' }, cliponaxis: true },
+        { x: xs, y: lgbMape, name: 'Champion', mode: 'lines+markers', line: { color: '#c9a227' }, cliponaxis: true },
         { x: xs, y: ridgeMape, name: 'Ridge', mode: 'lines+markers', line: { color: '#c97a6d' }, cliponaxis: true },
       ], plotLayout('Relative miss as the ledger grows', 'MAPE %'), plotCfg);
 
       Plotly.newPlot('chart-hist-r2', [
-        { x: xs, y: lgbR2, name: 'LightGBM', mode: 'lines+markers', line: { color: '#7dba8a' }, cliponaxis: true },
+        { x: xs, y: lgbR2, name: 'Champion', mode: 'lines+markers', line: { color: '#7dba8a' }, cliponaxis: true },
         { x: xs, y: ridgeR2, name: 'Ridge', mode: 'lines+markers', line: { color: '#c9a227' }, cliponaxis: true },
       ], plotLayout('Price R² as the ledger grows', 'R² (price)'), plotCfg);
 
@@ -1610,12 +1620,13 @@
 
       const fmtN = v => v == null || v === '' ? '—' : (typeof v === 'number' ? (Number.isInteger(v) ? fmt(v) : v.toFixed(2)) : v);
       document.getElementById('history-body').innerHTML = rows.slice().reverse().map(r => {
-        const l = r.lightgbm || {};
+        const l = r.champion_metrics || r.lightgbm || {};
         const tops = (r.top_features || []).slice(0, 5).map(t => t.feature).join(', ');
         const when = (r.timestamp || '').replace('T', ' ').replace('+00:00', 'Z').slice(0, 19);
+        const who = r.champion || '—';
         return `<tr>
           <td>${when || '—'}</td>
-          <td>${r.checkpoint_label || r.note || '—'}</td>
+          <td>${r.checkpoint_label || r.note || '—'} <span class="muted">(${who})</span></td>
           <td>${fmt(r.n_enriched_sold)}</td>
           <td>${fmt(r.n_train)} / ${fmt(r.n_test)}</td>
           <td>${l.MAE != null ? Math.round(l.MAE).toLocaleString() : '—'}</td>

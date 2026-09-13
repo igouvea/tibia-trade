@@ -100,11 +100,21 @@ def seed_history_if_empty() -> None:
     metrics = json.loads(METRICS.read_text(encoding="utf-8"))
     n_enr = count_detail_ok()
     top = (metrics.get("top_features") or [])[:10]
+    champ = metrics.get("champion") or "lightgbm"
+    champ_m = (metrics.get("champion_metrics") or metrics.get("models", {}).get(champ) or metrics.get("lightgbm") or {})
     row = {
         "timestamp": utc_now(),
         "n_enriched_sold": n_enr,
         "n_train": metrics.get("n_train"),
         "n_test": metrics.get("n_test"),
+        "champion": champ,
+        "leaderboard": metrics.get("leaderboard") or [],
+        "champion_metrics": {
+            "MAE": champ_m.get("MAE"),
+            "MAPE": champ_m.get("MAPE"),
+            "R2_price": champ_m.get("R2_price"),
+            "MedAE": champ_m.get("MedAE"),
+        },
         "lightgbm": {
             "MAE": (metrics.get("lightgbm") or {}).get("MAE"),
             "MAPE": (metrics.get("lightgbm") or {}).get("MAPE"),
@@ -162,11 +172,22 @@ def run_retrain(checkpoint_n: int, n_enriched: int) -> dict:
         bundle_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(bundle_src, bundle_dir / f"model_bundle_at_{checkpoint_n}.joblib")
 
+    champ = metrics.get("champion") or "lightgbm"
+    champ_m = (metrics.get("champion_metrics") or metrics.get("models", {}).get(champ) or metrics.get("lightgbm") or {})
     hist = {
         "timestamp": utc_now(),
         "n_enriched_sold": n_enriched,
         "n_train": metrics.get("n_train"),
         "n_test": metrics.get("n_test"),
+        "champion": champ,
+        "leaderboard": metrics.get("leaderboard") or [],
+        "champion_metrics": {
+            "MAE": champ_m.get("MAE"),
+            "MedAE": champ_m.get("MedAE"),
+            "MAPE": champ_m.get("MAPE"),
+            "MdAPE": champ_m.get("MdAPE"),
+            "R2_price": champ_m.get("R2_price"),
+        },
         "lightgbm": {
             "MAE": (metrics.get("lightgbm") or {}).get("MAE"),
             "MedAE": (metrics.get("lightgbm") or {}).get("MedAE"),
@@ -188,13 +209,21 @@ def run_retrain(checkpoint_n: int, n_enriched: int) -> dict:
         "checkpoint_label": f"enriched={checkpoint_n}",
         "n_trainable_enriched": n_te,
     }
+    # Also copy living models into checkpoint
+    living_src = MODELS / "living"
+    if living_src.exists():
+        living_dst = CHECKPOINTS / "living" / f"at_{checkpoint_n}"
+        if living_dst.exists():
+            shutil.rmtree(living_dst)
+        shutil.copytree(living_src, living_dst)
     append_history(hist)
     log.info(
-        "Retrain done enriched=%s n_train=%s LGBM MAE=%.1f MAPE=%.1f → %s + history",
+        "Retrain done enriched=%s n_train=%s champion=%s MAE=%.1f MAPE=%.1f → %s + history",
         checkpoint_n,
         metrics.get("n_train"),
-        (metrics.get("lightgbm") or {}).get("MAE") or 0,
-        (metrics.get("lightgbm") or {}).get("MAPE") or 0,
+        champ,
+        champ_m.get("MAE") or 0,
+        champ_m.get("MAPE") or 0,
         snap_path,
     )
     return hist
