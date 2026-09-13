@@ -266,6 +266,14 @@ def api_metrics():
 def api_metrics_history():
     rows = load_metrics_history()
     n_enr = count_detail_ok()
+    # Prefer watcher state when the deployed detail snapshot lags the box
+    state_path = DATA / "retrain_watcher_state.json"
+    if state_path.exists():
+        try:
+            st = json.loads(state_path.read_text(encoding="utf-8"))
+            n_enr = max(n_enr, int(st.get("n_enriched_sold") or 0))
+        except Exception:
+            pass
     last_cp = 0
     for row in rows:
         label = str(row.get("checkpoint_label") or row.get("note") or "")
@@ -276,15 +284,21 @@ def api_metrics_history():
                 floor = max(floor, int(label.split("=", 1)[1]))
             except ValueError:
                 pass
-        if not label.startswith("seed"):
-            last_cp = max(last_cp, floor)
-        else:
-            last_cp = max(last_cp, floor)
+        last_cp = max(last_cp, floor)
+    # Also surface explicit next from watcher state when ahead of history floor
+    next_at = last_cp + 1000
+    if state_path.exists():
+        try:
+            st = json.loads(state_path.read_text(encoding="utf-8"))
+            last_cp = max(last_cp, int(st.get("last_checkpoint") or 0))
+            next_at = max(next_at, int(st.get("next_retrain_at") or 0), last_cp + 1000)
+        except Exception:
+            pass
     return {
         "history": rows,
         "n_enriched_sold": n_enr,
         "last_checkpoint": last_cp,
-        "next_retrain_at": last_cp + 1000,
+        "next_retrain_at": next_at,
     }
 
 

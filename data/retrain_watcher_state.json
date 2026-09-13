@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-09-13T01:46:10.823781+00:00",
-  "n_enriched_sold": 2977,
-  "last_checkpoint": 2000,
-  "next_retrain_at": 3000
+  "updated_at": "2026-09-13T06:55:40.607961+00:00",
+  "n_enriched_sold": 5823,
+  "last_checkpoint": 5000,
+  "next_retrain_at": 6000
 }
