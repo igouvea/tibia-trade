@@ -937,8 +937,8 @@
       <div class="grid grid-3 panel" id="overview-stats"></div>
       <div class="grid grid-2">
         <div class="panel chart-panel story-card">
-          <h3>By vocation × level</h3>
-          <p class="ink-sm">Sales stacked by level band; hover a segment for that band’s median purse.</p>
+          <h3>By level × vocation</h3>
+          <p class="ink-sm">Level bands on the axis; each color is a vocation. Hover for that cell’s median purse.</p>
           <div id="chart-voc" class="chart-box"></div>
         </div>
         <div class="panel chart-panel story-card">
@@ -1255,39 +1255,56 @@
         <div class="stat"><div class="label">Signals we weigh</div><div class="value">${fmt(m.n_features)}</div></div>`;
 
       const vocLv = data.by_vocation_level || {};
-      const vocs = vocLv.vocations || [];
-      const bucketColors = {
-        '0-199': '#6b8f71',
-        '200-499': '#8faf9a',
-        '500-899': '#c9a227',
-        '900-1299': '#c97a6d',
-        '>=1300': '#a8554a',
+      const vocs = (vocLv.vocations || []).filter(v => v && v !== 'Unknown');
+      const buckets = vocLv.level_buckets || ['0-199','200-499','500-899','900-1299','>=1300'];
+      const vocColors = {
+        Knight: '#c9a227',
+        Paladin: '#7dba8a',
+        Sorcerer: '#6b9ac4',
+        Druid: '#8faf9a',
+        Monk: '#c97a6d',
+        Unknown: '#7a7268',
       };
-      const vocTraces = (vocLv.series || []).map(s => {
-        const counts = s.count || [];
-        const medians = s.median || [];
+      const vocPalette = ['#c9a227','#7dba8a','#6b9ac4','#8faf9a','#c97a6d','#b5a690','#a8554a'];
+      const seriesByBucket = {};
+      (vocLv.series || []).forEach(s => { seriesByBucket[s.level_bucket] = s; });
+      const allVocs = vocLv.vocations || [];
+      const vocTraces = vocs.map((voc, vi) => {
+        const idx = allVocs.indexOf(voc);
+        const counts = buckets.map(b => {
+          const s = seriesByBucket[b];
+          if (!s || idx < 0) return 0;
+          return (s.count || [])[idx] || 0;
+        });
+        const medians = buckets.map(b => {
+          const s = seriesByBucket[b];
+          if (!s || idx < 0) return null;
+          const m = (s.median || [])[idx];
+          return m == null ? null : Math.round(m);
+        });
         return {
           type: 'bar',
-          name: s.level_bucket,
-          x: vocs,
+          name: voc,
+          x: buckets,
           y: counts,
-          customdata: medians.map(m => (m == null ? null : Math.round(m))),
+          customdata: medians,
           hovertemplate:
-            '%{x}<br>' + s.level_bucket +
+            '%{x}<br>' + voc +
             '<br>n=%{y}<br>median %{customdata} TC<extra></extra>',
-          marker: { color: bucketColors[s.level_bucket] || '#b5a690' },
+          marker: { color: vocColors[voc] || vocPalette[vi % vocPalette.length] },
         };
       });
       Plotly.newPlot('chart-voc', vocTraces.length ? vocTraces : [{
         type: 'bar',
-        x: (data.by_vocation || []).map(r => r.vocation),
-        y: (data.by_vocation || []).map(r => r.count),
+        x: (data.by_level || []).map(r => r.level_bin),
+        y: (data.by_level || []).map(r => r.count),
         marker: { color: '#c9a227' },
       }], {
-        title: 'Sales by vocation, stacked by level',
+        title: 'Sales by level, stacked by vocation',
         barmode: 'stack',
         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
-        font: { color: '#efe6d6' }, margin: { t: 40, r: 20, b: 40, l: 50 },
+        font: { color: '#efe6d6' }, margin: { t: 40, r: 20, b: 48, l: 50 },
+        xaxis: { title: 'Level band', categoryorder: 'array', categoryarray: buckets },
         yaxis: { title: 'Sold characters (n)' },
         legend: { orientation: 'h', y: 1.14, x: 0 },
       }, {responsive: true, displayModeBar: false});
