@@ -137,8 +137,14 @@ def seed_history_if_empty() -> None:
 
 
 def run_retrain(checkpoint_n: int, n_enriched: int) -> dict:
-    from features.build import build_dataframe, prepare_xy
-    from model.train import train_models
+    import importlib
+    import features.build as build_mod
+    import model.train as train_mod
+    importlib.reload(build_mod)
+    importlib.reload(train_mod)
+    build_dataframe = build_mod.build_dataframe
+    prepare_xy = build_mod.prepare_xy
+    train_models = train_mod.train_models
 
     log.info("=== RETRAIN checkpoint enriched=%s (detail_ok=%s) ===", checkpoint_n, n_enriched)
     df = build_dataframe(LIST, DETAIL)
