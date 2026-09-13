@@ -1,0 +1,296 @@
+{
+  "auction_id": 2227745,
+  "url": "https://www.tibia.com/charactertrade/?auctionid=2227745&page=details&subtopic=pastcharactertrades",
+  "name": "Prismello",
+  "level": 744,
+  "vocation": "Elder Druid",
+  "sex": "Male",
+  "world": "Peloria",
+  "auction_start": "Aug\u00a010\u00a02026, 10:04\u00a0CEST",
+  "auction_end": "Aug\u00a013\u00a02026, 22:00\u00a0CEST",
+  "bid_type": "Winning Bid",
+  "bid": 18000,
+  "status": "finished",
+  "list_highlights": [
+    "117 Magic Level (Loyalty bonus not included)",
+    "Charm Points: 9081 (Unused: 581), Minor Charm Echoes: 1350 (Unused: 50)",
+    "Regular World Transfer can be purchased",
+    "22 Quests completed"
+  ],
+  "skills": [
+    {
+      "name": "Axe Fighting",
+      "level": 21,
+      "progress": 12.33
+    },
+    {
+      "name": "Club Fighting",
+      "level": 15,
+      "progress": 29.2
+    },
+    {
+      "name": "Distance Fighting",
+      "level": 12,
+      "progress": 75.25
+    },
+    {
+      "name": "Fishing",
+      "level": 16,
+      "progress": 54.28
+    },
+    {
+      "name": "Fist Fighting",
+      "level": 21,
+      "progress": 68.09
+    },
+    {
+      "name": "Magic Level",
+      "level": 117,
+      "progress": 52.95
+    },
+    {
+      "name": "Shielding",
+      "level": 38,
+      "progress": 86.71
+    },
+    {
+      "name": "Sword Fighting",
+      "level": 17,
+      "progress": 2.09
+    }
+  ],
+  "general": {
+    "stats": {
+      "hit_points": "3,865",
+      "mana": "22,170",
+      "capacity": "8,050",
+      "speed": "853",
+      "blessings": "7/7",
+      "mounts": "9",
+      "outfits": "36",
+      "titles": "23"
+    },
+    "additional": {
+      "creation_date": "Oct\u00a023\u00a02012,\u00a008:19:42\u00a0CEST",
+      "experience": "6,811,147,759",
+      "gold": "13,077",
+      "achievement_points": "359"
+    },
+    "transfer": {
+      "regular_world_transfer": "can be purchased and used immediately"
+    },
+    "charms_meta": {
+      "charm_expansion": "yes",
+      "available_charm_points": "581",
+      "spent_charm_points": "8,500",
+      "available_minor_charm_echoes": "50",
+      "spent_minor_charm_echoes": "1,300"
+    },
+    "daily_rewards": {
+      "daily_reward_streak": "1"
+    },
+    "hunting": {
+      "hunting_task_points": "7,303",
+      "permanent_weekly_task_expansion": "no",
+      "permanent_prey_slots": "1",
+      "prey_wildcards": "2"
+    },
+    "hirelings": {
+      "hirelings": "0",
+      "hireling_jobs": "0",
+      "hireling_outfits": "0"
+    },
+    "dust": {
+      "exalted_dust": "125/2,540"
+    },
+    "boss": {
+      "animus_masteries_unlocked": "44"
+    },
+    "bonus_promotion": {
+      "boss_points": "2,230"
+    }
+  },
+  "charms": [
+    {
+      "cost": 900,
+      "type": "Major",
+      "name": "Curse",
+      "grade": 2
+    },
+    {
+      "cost": 1500,
+      "type": "Major",
+      "name": "Divine Wrath",
+      "grade": 2
+    },
+    {
+      "cost": 1000,
+      "type": "Major",
+      "name": "Enflame",
+      "grade": 2
+    },
+    {
+      "cost": 800,
+      "type": "Major",
+      "name": "Freeze",
+      "grade": 2
+    },
+    {
+      "cost": 1500,
+      "type": "Major",
+      "name": "Overflux",
+      "grade": 2
+    },
+    {
+      "cost": 600,
+      "type": "Major",
+      "name": "Poison",
+      "grade": 2
+    },
+    {
+      "cost": 800,
+      "type": "Major",
+      "name": "Savage Blow",
+      "grade": 1
+    },
+    {
+      "cost": 600,
+      "type": "Major",
+      "name": "Wound",
+      "grade": 2
+    },
+    {
+      "cost": 800,
+      "type": "Major",
+      "name": "Zap",
+      "grade": 2
+    },
+    {
+      "cost": 250,
+      "type": "Minor",
+      "name": "Adrenaline Burst",
+      "grade": 2
+    },
+    {
+      "cost": 100,
+      "type": "Minor",
+      "name": "Cleanse",
+      "grade": 1
+    },
+    {
+      "cost": 100,
+      "type": "Minor",
+      "name": "Fatal Hold",
+      "grade": 1
+    },
+    {
+      "cost": 100,
+      "type": "Minor",
+      "name": "Gut",
+      "grade": 1
+    },
+    {
+      "cost": 250,
+      "type": "Minor",
+      "name": "Vampiric Embrace",
+      "grade": 2
+    },
+    {
+      "cost": 250,
+      "type": "Minor",
+      "name": "Void Inversion",
+      "grade": 2
+    },
+    {
+      "cost": 250,
+      "type": "Minor",
+      "name": "Void's Call",
+      "grade": 2
+    }
+  ],
+  "counts": {
+    "items_page1_icons": 76,
+    "store_items_page1_icons": 5,
+    "mounts_page1_icons": 9,
+    "store_mounts_page1_icons": 0,
+    "outfits_page1_icons": 30,
+    "store_outfits_page1_icons": 0,
+    "familiars_page1_icons": 1,
+    "charms": 16
+  },
+  "item_summary_meta": {
+    "nav_text": "\u00bb Pages: 1 2 3 4 \u00bb Results: 282",
+    "results": 282
+  },
+  "store_item_summary_meta": {
+    "nav_text": "\u00bb Pages: 1 \u00bb Results: 5",
+    "results": 5
+  },
+  "mounts_meta": {
+    "nav_text": "\u00bb Pages: 1 \u00bb Results: 9",
+    "results": 9
+  },
+  "outfits_meta": {
+    "nav_text": "\u00bb Pages: 1 2 \u00bb Results: 36",
+    "results": 36
+  },
+  "sample_store_items": [
+    "16x strong mana potion",
+    "125x ultimate mana potion",
+    "3x tropical marinated tiger",
+    "consecrated beef",
+    "podium of vigour"
+  ],
+  "sample_items": [
+    "2x giant shimmering pearl",
+    "3x giant shimmering pearl",
+    "flower bouquet",
+    "book",
+    "6x book",
+    "backpack",
+    "2x bucket",
+    "2x bone key"
+  ],
+  "sample_mounts": [
+    "Blazebringer",
+    "Undead Cavebear",
+    "Donkey",
+    "Sparkion",
+    "Gryphon",
+    "Krakoloss",
+    "Foxmouse",
+    "Gloom Maw"
+  ],
+  "sample_outfits": [
+    "Citizen (base & addon 1 & addon 2)",
+    "Hunter (base & addon 1 & addon 2)",
+    "Mage (base & addon 1)",
+    "Knight (base & addon 1 & addon 2)",
+    "Nobleman (base & addon 1 & addon 2)",
+    "Barbarian (base & addon 1 & addon 2)",
+    "Druid (base & addon 1 & addon 2)",
+    "Oriental (base & addon 1 & addon 2)"
+  ],
+  "section_ids": [
+    "Achievements",
+    "BestiaryProgress",
+    "Blessings",
+    "BosstiaryProgress",
+    "BountyTalisman",
+    "Charms",
+    "CompletedCyclopediaMapAreas",
+    "CompletedQuestLines",
+    "Familiars",
+    "General",
+    "Imbuements",
+    "ItemSummary",
+    "Mounts",
+    "Outfits",
+    "Proficiencies",
+    "RevealedGems",
+    "StoreItemSummary",
+    "StoreMounts",
+    "StoreOutfits",
+    "Titles"
+  ]
+}

@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tibia Char Bazaar — Fair Price</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=IM+Fell+English:ital@0;1&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    :root {
+      --bg: #16110e;
+      --bg-warm: #1c1511;
+      --panel: rgba(42, 32, 24, 0.88);
+      --panel2: rgba(54, 42, 32, 0.92);
+      --text: #efe6d6;
+      --muted: #b5a690;
+      --accent: #c9a227;
+      --accent-soft: #a8842a;
+      --accent2: #8faf9a;
+      --good: #7dba8a;
+      --bad: #c97a6d;
+      --border: rgba(168, 132, 74, 0.28);
+      --border-strong: rgba(168, 132, 74, 0.45);
+      --glow: rgba(201, 162, 39, 0.08);
+      --radius: 14px;
+      --font: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      --story: "IM Fell English", "Times New Roman", serif;
+      --display: "MedievalSharp", "Palatino Linotype", serif;
+      --plot-font: #efe6d6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 120% 80% at 50% -10%, rgba(120, 70, 30, 0.18), transparent 55%),
+        radial-gradient(ellipse 80% 50% at 100% 100%, rgba(80, 40, 20, 0.12), transparent 45%),
+        radial-gradient(ellipse 60% 40% at 0% 80%, rgba(60, 35, 15, 0.1), transparent 40%),
+        linear-gradient(180deg, var(--bg-warm), var(--bg));
+      background-attachment: fixed;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* Mouse-reactive torchlight (kept faint) */
+    .torch-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .torch {
+      position: absolute;
+      width: 55vmax;
+      height: 55vmax;
+      border-radius: 50%;
+      filter: blur(8px);
+      opacity: 0.55;
+      mix-blend-mode: screen;
+      will-change: transform, opacity;
+      transition: opacity 0.4s ease;
+    }
+    .torch-left {
+      left: -18vmax;
+      top: 8vh;
+      background: radial-gradient(circle, rgba(255, 160, 60, 0.22) 0%, rgba(180, 70, 20, 0.08) 35%, transparent 68%);
+      transform: translate3d(calc(var(--mx, 50) * 0.12px), calc(var(--my, 40) * 0.08px), 0);
+    }
+    .torch-right {
+      right: -20vmax;
+      top: 18vh;
+      background: radial-gradient(circle, rgba(255, 140, 50, 0.18) 0%, rgba(160, 55, 15, 0.07) 38%, transparent 70%);
+      transform: translate3d(calc(var(--mx, 50) * -0.1px), calc(var(--my, 40) * 0.1px), 0);
+    }
+    .torch-cursor {
+      width: 42vmax;
+      height: 42vmax;
+      left: 0;
+      top: 0;
+      opacity: 0.7;
+      background: radial-gradient(circle, rgba(255, 190, 90, 0.16) 0%, rgba(200, 90, 25, 0.06) 28%, transparent 62%);
+      transform: translate3d(
+        calc(var(--mx, 50) * 1px - 21vmax),
+        calc(var(--my, 40) * 1px - 21vmax),
+        0
+      );
+    }
+    .prologue p, .chapter .ink, .panel.story-card .ink-sm, .prologue {
+      font-family: var(--story);
+    }
+    .prologue p { font-size: 1.12rem; }
+    .chapter .ink { font-size: 1.05rem; }
+    header h1 { font-size: 2.15rem; }
+    .chapter h2 { font-size: 1.28rem; }
+    header, .app-shell, footer { position: relative; z-index: 1; }
+
+    /* ---- App shell: left nav · main · right barrel ---- */
+    .app-shell {
+      display: grid;
+      grid-template-columns: 210px minmax(0, 1fr) 280px;
+      min-height: calc(100vh - 7.5rem);
+      gap: 0;
+      align-items: stretch;
+    }
+    @media (max-width: 1280px) {
+      .app-shell {
+        grid-template-columns: 190px minmax(0, 1fr) 260px;
+      }
+    }
+    @media (max-width: 1100px) {
+      .app-shell {
+        grid-template-columns: 170px minmax(0, 1fr);
+        grid-template-rows: auto auto;
+      }
+      .nav-rail { grid-row: 1 / span 2; }
+      .barrel-rail {
+        display: block;
+        grid-column: 2;
+        border-left: none;
+        border-top: 1px solid rgba(90, 60, 30, 0.45);
+        padding: 0.75rem 1rem 1.25rem;
+      }
+      .barrel { min-height: 0; border-radius: 16px; }
+      .barrel-inner { min-height: 0; }
+    }
+    @media (max-width: 720px) {
+      .app-shell { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
+      .nav-rail {
+        grid-row: auto;
+        display: flex; flex-direction: row; flex-wrap: wrap;
+        border-right: none; border-bottom: 1px solid var(--border);
+        padding: 0.5rem;
+        gap: 0.35rem;
+      }
+      .nav-rail .nav-brand { display: none; }
+      .nav-rail button { flex: 1 1 auto; text-align: center; }
+      .nav-rail button .nav-sub { display: none; }
+      .barrel-rail { grid-column: 1; }
+    }
+
+    header {
+      padding: 1.1rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(48, 36, 26, 0.75), rgba(22, 17, 14, 0.35));
+      display: flex; flex-wrap: wrap; gap: 1rem; align-items: baseline; justify-content: space-between;
+      box-shadow: inset 0 -1px 0 rgba(201, 162, 39, 0.06);
+    }
+    header h1 {
+      margin: 0;
+      font-family: var(--display);
+      font-size: 2.15rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+    header h1 span { color: var(--accent); font-weight: 500; }
+    header p { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.92rem; max-width: 42rem; line-height: 1.4; }
+
+    /* Left chapter rail */
+    .nav-rail {
+      background:
+        linear-gradient(90deg, rgba(18, 12, 8, 0.92), rgba(28, 20, 14, 0.75));
+      border-right: 1px solid var(--border);
+      padding: 1.1rem 0.85rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      box-shadow: inset -8px 0 18px rgba(0,0,0,0.18);
+    }
+    .nav-rail .nav-brand {
+      font-family: var(--display);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent-soft);
+      margin: 0 0.4rem 0.85rem;
+      opacity: 0.9;
+    }
+    .nav-rail button {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 0.7rem 0.85rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: var(--display);
+      font-weight: 500;
+      font-size: 0.98rem;
+      letter-spacing: 0.03em;
+      text-align: left;
+      transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .nav-rail button .nav-sub {
+      display: block;
+      font-family: var(--font);
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: inherit;
+      opacity: 0.65;
+      margin-top: 0.15rem;
+    }
+    .nav-rail button.active, .nav-rail button:hover {
+      color: var(--text);
+      background: var(--glow);
+      border-color: var(--border);
+    }
+    .nav-rail button.active {
+      box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.16), 0 0 18px rgba(201, 162, 39, 0.06);
+      border-left: 3px solid var(--accent);
+    }
+    .nav-rail .nav-foot {
+      margin-top: auto;
+      padding: 0.75rem 0.5rem 0;
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.35;
+      border-top: 1px solid var(--border);
+    }
+
+    main {
+      padding: 1.25rem 1.35rem 2.5rem;
+      max-width: none;
+      margin: 0;
+      min-width: 0;
+    }
+
+    /* Right barrel / wood controls */
+    .barrel-rail {
+      padding: 0.85rem 0.75rem 1.25rem 0.55rem;
+      border-left: 1px solid rgba(90, 60, 30, 0.45);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(120, 70, 30, 0.12), transparent 55%),
+        linear-gradient(90deg, rgba(12, 8, 5, 0.35), transparent 18%),
+        linear-gradient(180deg, #2a1c12 0%, #1a110c 100%);
+    }
+    .barrel {
+      position: relative;
+      height: 100%;
+      min-height: 28rem;
+      border-radius: 18px 20px 22px 18px / 28px 32px 36px 30px;
+      padding: 1.35rem 1.05rem 1.2rem;
+      color: var(--text);
+      background:
+        repeating-linear-gradient(
+          90deg,
+          #3a2818 0px,
+          #4a3420 6px,
+          #2e1e12 12px,
+          #513820 18px,
+          #3a2818 24px
+        );
+      box-shadow:
+        inset 0 0 0 2px rgba(90, 55, 25, 0.55),
+        inset 0 0 40px rgba(0, 0, 0, 0.35),
+        0 12px 28px rgba(0, 0, 0, 0.4),
+        0 1px 0 rgba(255, 210, 140, 0.08);
+      overflow: hidden;
+    }
+    .barrel::before,
+    .barrel::after {
+      content: "";
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      height: 10px;
+      border-radius: 4px;
+      background:
+        linear-gradient(180deg, #8a7a55, #5a4a30 40%, #3a3020 55%, #7a6a45);
+      box-shadow:
+        0 1px 0 rgba(255, 230, 170, 0.25),
+        0 3px 4px rgba(0,0,0,0.35),
+        inset 0 1px 0 rgba(255, 240, 200, 0.2);
+      z-index: 2;
+      pointer-events: none;
+    }
+    .barrel::before { top: 11%; }
+    .barrel::after { bottom: 12%; }
+    .barrel-inner {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(180deg, rgba(22, 14, 9, 0.55), rgba(14, 9, 6, 0.72));
+      border: 1px solid rgba(140, 100, 50, 0.28);
+      border-radius: 12px;
+      padding: 0.95rem 0.85rem 1rem;
+      box-shadow: inset 0 1px 0 rgba(255, 220, 150, 0.06);
+      min-height: 22rem;
+    }
+    .barrel-title {
+      font-family: var(--display);
+      font-size: 1.05rem;
+      letter-spacing: 0.04em;
+      margin: 0 0 0.2rem;
+      color: #f0e2c4;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    }
+    .barrel-sub {
+      font-family: var(--story);
+      font-size: 0.88rem;
+      font-style: italic;
+      color: #c4b090;
+      margin: 0 0 0.95rem;
+      line-height: 1.35;
+    }
+    .barrel-pane { display: none; }
+    .barrel-pane.active { display: block; }
+    .barrel-pane label {
+      color: #cbb892;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .barrel-pane .field { margin-bottom: 0.7rem; }
+    .barrel-pane input,
+    .barrel-pane select {
+      background: rgba(10, 7, 5, 0.55);
+      border-color: rgba(160, 120, 60, 0.45);
+      font-size: 0.9rem;
+      padding: 0.55rem 0.65rem;
+    }
+    .barrel-pane button.primary {
+      width: 100%;
+      margin-top: 0.35rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+    }
+    /* Main-column appraisal desk (mockup) */
+    .appraisal-desk {
+      position: relative;
+      max-width: 420px;
+      margin: 0 auto 1.25rem;
+      padding: 1.35rem 1.25rem 1.2rem;
+      border-radius: 18px;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          #3a2818 0px,
+          #4a3420 7px,
+          #2e1e12 14px,
+          #513820 21px,
+          #3a2818 28px
+        );
+      box-shadow:
+        inset 0 0 0 2px rgba(90, 55, 25, 0.55),
+        inset 0 0 40px rgba(0, 0, 0, 0.35),
+        0 12px 28px rgba(0, 0, 0, 0.35);
+    }
+    .appraisal-desk::before {
+      content: "";
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      top: 4.15rem;
+      height: 9px;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #8a7a55, #5a4a30 40%, #3a3020 55%, #7a6a45);
+      box-shadow:
+        0 1px 0 rgba(255, 230, 170, 0.25),
+        0 3px 4px rgba(0,0,0,0.35),
+        inset 0 1px 0 rgba(255, 240, 200, 0.2);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .appraisal-desk-inner {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(180deg, rgba(22, 14, 9, 0.72), rgba(12, 8, 5, 0.88));
+      border: 1px solid rgba(140, 100, 50, 0.32);
+      border-radius: 14px;
+      padding: 1.15rem 1.1rem 1.05rem;
+      box-shadow: inset 0 1px 0 rgba(255, 220, 150, 0.06);
+      text-align: left;
+    }
+    .appraisal-desk-inner h3 {
+      margin: 0 0 0.25rem;
+      font-family: var(--display);
+      font-size: 1.35rem;
+      letter-spacing: 0.03em;
+      color: #f0e2c4;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    }
+    .appraisal-desk-inner .desk-sub {
+      margin: 0 0 1.55rem;
+      font-family: var(--story);
+      font-style: italic;
+      font-size: 0.95rem;
+      color: #c4b090;
+      line-height: 1.35;
+    }
+    .appraisal-desk-inner label {
+      color: #cbb892;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .appraisal-desk-inner input {
+      margin-bottom: 0.75rem;
+      background: rgba(8, 5, 3, 0.65);
+      border-color: rgba(160, 120, 60, 0.4);
+    }
+    .appraisal-desk-inner button.primary {
+      width: 100%;
+      font-size: 1.02rem;
+      padding: 0.75rem 1rem;
+    }
+    .appraisal-desk-inner .desk-hint {
+      margin: 0.85rem 0 0;
+      font-size: 0.78rem;
+      color: #a89470;
+      line-height: 1.4;
+    }
+
+    .barrel-hint {
+      margin-top: 0.85rem;
+      font-size: 0.78rem;
+      color: #a89470;
+      line-height: 1.4;
+    }
+    .barrel-stat {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid rgba(140, 100, 50, 0.22);
+      font-size: 0.85rem;
+    }
+    .barrel-stat span:last-child { color: #f0d78a; font-weight: 700; text-shadow: 0 1px 1px rgba(0,0,0,0.5); }
+
+    .panel {
+      background:
+        linear-gradient(165deg, rgba(58, 44, 32, 0.55), rgba(36, 28, 22, 0.72));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.25rem;
+      margin-bottom: 1rem;
+      box-shadow:
+        0 1px 0 rgba(255, 230, 180, 0.04) inset,
+        0 8px 24px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(4px);
+    }
+    .grid { display: grid; gap: 1rem; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: minmax(0, 1fr); }
+    }
+    .chart-panel { overflow: hidden; min-width: 0; }
+    main, .panel, .chart-panel { min-width: 0; }
+    .chart-box {
+      width: 100%;
+      height: 340px;
+      max-width: 100%;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .chart-box .js-plotly-plot,
+    .chart-box .plot-container,
+    .chart-box .svg-container {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .stat { text-align: left; }
+    .stat .label {
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+    .stat .value {
+      font-family: var(--display);
+      font-size: 1.45rem;
+      font-weight: 600;
+      margin-top: 0.25rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.35rem; }
+    input, select, button.primary {
+      width: 100%; padding: 0.65rem 0.75rem; border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: rgba(18, 13, 10, 0.55);
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: var(--font);
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-soft);
+      box-shadow: 0 0 0 3px var(--glow);
+    }
+    button.primary {
+      background: linear-gradient(180deg, #d4b44a, #a8842a);
+      color: #1a1208;
+      font-weight: 700;
+      border: 1px solid rgba(255, 220, 140, 0.25);
+      cursor: pointer;
+      width: auto;
+      padding: 0.65rem 1.25rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    button.primary:hover { filter: brightness(1.05); }
+    button.primary:disabled { opacity: 0.6; cursor: wait; filter: none; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: end; }
+    .row > * { flex: 1; min-width: 140px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 0.5rem 0.55rem; border-bottom: 1px solid var(--border); text-align: left; }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      position: sticky; top: 0;
+      background: rgba(36, 28, 22, 0.96);
+      letter-spacing: 0.03em;
+    }
+    .table-wrap { max-height: 420px; overflow: auto; border-radius: 8px; }
+    a { color: #c4b07a; }
+    a:hover { color: var(--accent); }
+    .muted { color: var(--muted); }
+    .price {
+      font-family: var(--display);
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--good);
+      letter-spacing: 0.02em;
+    }
+    .range { color: var(--muted); }
+    .chip {
+      display: inline-block;
+      background: rgba(54, 42, 32, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.2rem 0.65rem;
+      margin: 0.15rem;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+    .caveat { font-size: 0.85rem; color: var(--muted); margin: 0.25rem 0; line-height: 1.45; }
+    .hidden { display: none !important; }
+    .err { color: var(--bad); }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding: 1.25rem;
+      border-top: 1px solid var(--border);
+      background: rgba(14, 10, 8, 0.4);
+    }
+    h3 {
+      font-family: var(--display);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      color: var(--text);
+    }
+    #metric-pill {
+      font-size: 0.85rem;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .prologue {
+      max-width: 40rem;
+      margin: 0 auto 1.5rem;
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(58,44,32,0.4), rgba(28,20,14,0.5));
+      box-shadow: 0 1px 0 rgba(255,230,180,0.04) inset;
+    }
+    .prologue .eyebrow {
+      font-family: var(--display);
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent-soft);
+      margin: 0 0 0.6rem;
+    }
+    .prologue p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.55;
+      font-style: italic;
+    }
+    .chapter {
+      margin-bottom: 0.85rem;
+    }
+    .chapter h2 {
+      font-family: var(--display);
+      font-weight: 560;
+      font-size: 1.28rem;
+      letter-spacing: 0.04em;
+      margin: 0 0 0.35rem;
+      color: var(--text);
+    }
+    .chapter .ink {
+      margin: 0 0 1rem;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 46rem;
+      font-size: 1.05rem;
+    }
+    .panel.story-card h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.98rem;
+    }
+    .panel.story-card .ink-sm {
+      margin: 0 0 0.75rem;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    /* UX polish */
+    .skip-link {
+      position: absolute; left: -999px; top: 0; z-index: 100;
+      background: var(--accent); color: #1a1208; padding: 0.5rem 0.85rem; border-radius: 0 0 8px 0;
+      font-weight: 700;
+    }
+    .skip-link:focus { left: 0; }
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .barrel-rail {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      max-height: 100vh;
+      overflow: auto;
+    }
+    .table-wrap { max-height: min(62vh, 560px); }
+    .table-wrap tr.clickable { cursor: pointer; }
+    .table-wrap tr.clickable:hover td { background: rgba(201, 162, 39, 0.08); }
+    .btn-ghost {
+      width: 100%;
+      margin-top: 0.45rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--font);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border-strong); }
+    .verdict {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 0.55rem 0 0.15rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+      border: 1px solid var(--border);
+    }
+    .verdict.good { background: rgba(125,186,138,0.15); color: var(--good); border-color: rgba(125,186,138,0.35); }
+    .verdict.warn { background: rgba(201,162,39,0.12); color: var(--accent); border-color: rgba(201,162,39,0.35); }
+    .verdict.bad { background: rgba(201,122,109,0.15); color: var(--bad); border-color: rgba(201,122,109,0.35); }
+    .verdict.muted { background: rgba(0,0,0,0.2); color: var(--muted); }
+    .row-actions { white-space: nowrap; }
+    .row-actions button {
+      background: rgba(201,162,39,0.12);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      border-radius: 8px;
+      padding: 0.25rem 0.55rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    .row-actions button:hover { filter: brightness(1.1); }
+    header { padding: 0.85rem 1.35rem 0.75rem; }
+    header h1 { font-size: 1.75rem !important; }
+    header p { font-size: 0.85rem; max-width: 36rem; }
+    #metric-pill { max-width: 22rem; text-align: right; line-height: 1.3; }
+    .nav-rail button[aria-current="page"] {
+      color: var(--text);
+      background: var(--glow);
+      border-color: var(--border);
+      box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.16), 0 0 18px rgba(201, 162, 39, 0.06);
+      border-left: 3px solid var(--accent);
+    }
+    .quick-appraise {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;
+    }
+    .quick-appraise button {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.25);
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    .quick-appraise button:hover { color: var(--text); border-color: var(--accent-soft); }
+
+    /* Backlog UX */
+    .barrel-fab {
+      display: none;
+      position: fixed;
+      right: 1rem;
+      bottom: 1.15rem;
+      z-index: 40;
+      border: 1px solid rgba(255, 220, 140, 0.3);
+      background: linear-gradient(180deg, #d4b44a, #a8842a);
+      color: #1a1208;
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.7rem 1.05rem;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      cursor: pointer;
+    }
+    .barrel-drawer-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 5, 3, 0.55);
+      z-index: 45;
+    }
+    .barrel-drawer-backdrop.open { display: block; }
+    .confidence {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 0.35rem 0 0.15rem;
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+    }
+    .confidence.high { color: var(--good); background: rgba(125,186,138,0.12); }
+    .confidence.med { color: var(--accent); background: rgba(201,162,39,0.12); }
+    .confidence.low { color: var(--bad); background: rgba(201,122,109,0.12); }
+    details.more-charts {
+      margin: 0.5rem 0 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(165deg, rgba(58, 44, 32, 0.4), rgba(36, 28, 22, 0.55));
+      padding: 0.35rem 0.85rem 0.85rem;
+    }
+    details.more-charts > summary {
+      cursor: pointer;
+      font-family: var(--display);
+      font-size: 1.02rem;
+      padding: 0.65rem 0.25rem;
+      color: var(--text);
+      list-style: none;
+    }
+    details.more-charts > summary::-webkit-details-marker { display: none; }
+    details.more-charts > summary::after {
+      content: "Show";
+      float: right;
+      font-family: var(--font);
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    details.more-charts[open] > summary::after { content: "Hide"; }
+    .save-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+    }
+    .save-row button {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.25);
+      color: var(--text);
+      font-family: var(--font);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.45rem 0.8rem;
+      cursor: pointer;
+    }
+    .save-row button.primary-lite {
+      background: rgba(201,162,39,0.18);
+      border-color: rgba(201,162,39,0.45);
+      color: var(--accent);
+    }
+    .saved-panel, .compare-panel {
+      margin-top: 1rem;
+    }
+    .saved-list {
+      display: grid;
+      gap: 0.45rem;
+    }
+    .saved-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.35rem 0.75rem;
+      align-items: center;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.2);
+      font-size: 0.88rem;
+    }
+    .saved-item .meta { color: var(--muted); font-size: 0.78rem; }
+    .saved-item .actions { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: end; }
+    .saved-item .actions button {
+      font-size: 0.72rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--font);
+      font-weight: 600;
+    }
+    .saved-item .actions button:hover { color: var(--text); }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+    @media (max-width: 720px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+    .compare-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.85rem;
+      background: rgba(0,0,0,0.22);
+    }
+    .compare-card h4 {
+      margin: 0 0 0.35rem;
+      font-family: var(--display);
+      font-size: 1.05rem;
+    }
+    .compare-card .fair {
+      font-family: var(--display);
+      font-size: 1.45rem;
+      color: var(--good);
+      font-weight: 600;
+    }
+    .compare-delta {
+      margin-top: 0.75rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      background: rgba(201,162,39,0.1);
+      border: 1px solid rgba(201,162,39,0.28);
+      font-size: 0.9rem;
+    }
+    @media (max-width: 1100px) {
+      .barrel-fab { display: inline-flex; align-items: center; gap: 0.35rem; }
+      .app-shell {
+        grid-template-columns: 170px minmax(0, 1fr) !important;
+        grid-template-rows: auto !important;
+      }
+      .nav-rail { grid-row: auto !important; }
+      .barrel-rail {
+        position: fixed !important;
+        top: 0; right: 0; bottom: 0;
+        width: min(320px, 92vw);
+        z-index: 50;
+        transform: translateX(105%);
+        transition: transform 0.22s ease;
+        border-left: 1px solid rgba(90, 60, 30, 0.55) !important;
+        border-top: none !important;
+        padding: 0.85rem 0.75rem 1.25rem !important;
+        background: linear-gradient(180deg, #2a1c12 0%, #1a110c 100%);
+        overflow: auto;
+        max-height: none !important;
+        grid-column: auto !important;
+      }
+      .barrel-rail.open { transform: translateX(0); }
+    }
+    @media (max-width: 720px) {
+      .app-shell { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="torch-layer" aria-hidden="true">
+    <div class="torch torch-left"></div>
+    <div class="torch torch-right"></div>
+    <div class="torch torch-cursor"></div>
+  </div>
+  <header>
+    <div>
+      <h1>The Char Bazaar <span>Ledger</span></h1>
+      <p>A quiet corner of the tavern — where sold characters teach what a fair purse looks like.</p>
+    </div>
+    <div class="muted" id="metric-pill">The fire is warming…</div>
+  </header>
+  <div class="app-shell">
+    <nav class="nav-rail" aria-label="Chapters">
+      <div class="nav-brand">Chapters</div>
+      <button type="button" data-tab="overview">The Hearth<span class="nav-sub">What the room remembers</span></button>
+      <button type="button" data-tab="explore">The Ledger<span class="nav-sub">Browse finished sales</span></button>
+      <button type="button" class="active" data-tab="predict" aria-current="page">Appraisal<span class="nav-sub">Lay a character down</span></button>
+      <button type="button" data-tab="history">The Craft<span class="nav-sub">How the model sharpens</span></button>
+      <div class="nav-foot">Only Winning Bids teach this ledger.</div>
+    </nav>
+
+    <main id="main-content">
+    <section id="tab-overview" class="hidden">
+      <div class="prologue">
+        <p class="eyebrow">Welcome, traveler</p>
+        <p>
+          Sit by the hearth. We only trust <strong style="color:var(--text);font-style:normal">Winning Bids</strong> —
+          real sales, not asking prices. Paste a character on Appraisal when you are ready.
+        </p>
+      </div>
+      <div class="chapter">
+        <h2>What the room remembers</h2>
+        <p class="ink">How gold has changed hands lately — by vocation, by level, and by what actually moves the purse.</p>
+      </div>
+      <div class="grid grid-3 panel" id="overview-stats"></div>
+      <div class="grid grid-2">
+        <div class="panel chart-panel story-card">
+          <h3>By vocation</h3>
+          <p class="ink-sm">Which paths have been clearing, and at what median purse.</p>
+          <div id="chart-voc" class="chart-box"></div>
+        </div>
+        <div class="panel chart-panel story-card">
+          <h3>By level band</h3>
+          <p class="ink-sm">How depth of experience has priced of late.</p>
+          <div id="chart-level" class="chart-box"></div>
+        </div>
+      </div>
+      <details class="more-charts" id="hearth-more">
+        <summary>Deeper hearth charts</summary>
+        <div class="panel chart-panel story-card" style="margin-top:0.5rem">
+          <h3>What the model listens to</h3>
+          <p class="ink-sm">Build density, skills, charms, rare assets — the whispers that move an estimate.</p>
+          <div id="chart-importance" class="chart-box"></div>
+        </div>
+        <div class="panel chart-panel story-card">
+          <h3>The shape of sold purses</h3>
+          <p class="ink-sm">Distribution of Winning Bids from the enriched ledger.</p>
+          <div id="chart-hist" class="chart-box"></div>
+        </div>
+      </details>
+    </section>
+
+    <section id="tab-explore" class="hidden">
+      <div class="chapter">
+        <h2>Open the ledger</h2>
+        <p class="ink">Browse finished sales. Filter in the barrel, then Appraise a row to score it on the desk.</p>
+      </div>
+      <div class="panel">
+        <div class="muted" id="explore-count"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Name</th><th>Level</th><th>Voc</th><th>World</th>
+                <th>Sold for</th><th>Max skill</th><th>Charms</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="explore-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-predict">
+      <div class="chapter">
+        <h2>Lay the character on the table</h2>
+        <p class="ink">Paste an auction link on the desk. We fetch the details, weigh them against real Winning Bids, and speak a fair purse — with honest caveats.</p>
+      </div>
+      <div class="appraisal-desk">
+        <div class="appraisal-desk-inner">
+          <h3>Appraisal desk</h3>
+          <p class="desk-sub">Paste a link. The barrel remembers the rest.</p>
+          <label for="pred-input">Auction URL or id</label>
+          <input id="pred-input" placeholder="auctionid=…" />
+          <button class="primary" id="btn-predict" type="button">Appraise</button>
+          <p class="desk-hint">Live details from Tibia.com; scored only against finished Winning Bids. Press Enter to appraise.</p>
+          <div class="quick-appraise" id="quick-appraise"></div>
+        </div>
+      </div>
+      <div class="panel hidden" id="pred-result">
+        <div class="grid grid-2">
+          <div>
+            <div class="muted" id="pred-char"></div>
+            <div class="muted" style="font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;margin-top:0.55rem">Fair purse</div>
+            <div class="price" id="pred-price"></div>
+            <div id="pred-confidence" class="confidence med hidden">—</div>
+            <div id="pred-verdict" class="verdict muted hidden">—</div>
+            <div class="muted" id="pred-gold" style="margin-top:0.25rem;font-size:0.85rem"></div>
+            <div class="range" id="pred-range"></div>
+            <div id="pred-highlights" style="margin-top:0.75rem"></div>
+            <div class="save-row">
+              <button type="button" class="primary-lite" id="btn-save-appraisal">Save appraisal</button>
+              <button type="button" id="btn-add-compare">Add to compare</button>
+            </div>
+          </div>
+          <div>
+            <h3 style="margin:0 0 0.5rem;font-size:1rem">Why the purse moved</h3>
+            <div id="pred-drivers"></div>
+          </div>
+        </div>
+        <h3 style="margin:1rem 0 0.5rem;font-size:1rem">Kin who sold before</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Level</th><th>Voc</th><th>World</th><th>Sold for</th></tr></thead>
+            <tbody id="pred-comps"></tbody>
+          </table>
+        </div>
+        <h3 style="margin:1rem 0 0.5rem;font-size:1rem">Honest caveats</h3>
+        <div id="pred-caveats"></div>
+      </div>
+      <div class="panel err hidden" id="pred-error"></div>
+      <div class="panel saved-panel" id="saved-panel">
+        <h3 style="margin:0 0 0.35rem;font-size:1rem">Saved appraisals</h3>
+        <p class="muted" style="margin:0 0 0.75rem;font-size:0.85rem">Stored in this browser. Pick two to compare side by side.</p>
+        <div class="saved-list" id="saved-list"><div class="muted">No saved appraisals yet.</div></div>
+      </div>
+      <div class="panel compare-panel hidden" id="compare-panel">
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">Compare</h3>
+        <div class="compare-grid" id="compare-grid"></div>
+        <div class="compare-delta" id="compare-delta"></div>
+        <div class="save-row">
+          <button type="button" id="btn-clear-compare">Clear compare</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-history" class="hidden">
+      <div class="chapter">
+        <h2>How the craft sharpens</h2>
+        <p class="ink">Each thousand sold characters we enrich, we retrain. Absolute miss (MAE) should fall as the ledger fills across cheap and rich alike — MAPE can rise when cheap chars enter, because small purses punish percentage error.</p>
+      </div>
+      <div class="grid grid-3 panel" id="history-stats"></div>
+      <div class="panel story-card" id="history-story"></div>
+      <div class="grid grid-2">
+        <div class="panel chart-panel story-card">
+          <h3>Absolute miss (MAE)</h3>
+          <p class="ink-sm">How many TC we miss on average, as the ledger grows.</p>
+          <div id="chart-hist-mae" class="chart-box"></div>
+        </div>
+        <div class="panel chart-panel story-card">
+          <h3>Relative miss (MAPE)</h3>
+          <p class="ink-sm">Percentage miss — often rises when cheap sales join a rich-skewed start.</p>
+          <div id="chart-hist-mape" class="chart-box"></div>
+        </div>
+      </div>
+      <div class="panel chart-panel story-card">
+        <h3>Price R²</h3>
+        <p class="ink-sm">Share of sold-price variance explained on the held-out test slice (higher is better).</p>
+        <div id="chart-hist-r2" class="chart-box"></div>
+      </div>
+      <div class="panel">
+        <h3 style="margin:0 0 0.75rem;font-size:1rem">Entries in the craft log</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>When (UTC)</th>
+                <th>Checkpoint</th>
+                <th>n enriched</th>
+                <th>n train/test</th>
+                <th>MAE</th>
+                <th>MAPE</th>
+                <th>R²</th>
+                <th>Top features</th>
+              </tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    </main>
+
+    <aside class="barrel-rail" id="barrel-rail" aria-label="Fine controls">
+      <div class="barrel">
+        <div class="barrel-inner">
+          <div class="barrel-pane active" data-for="overview" id="barrel-overview">
+            <h3 class="barrel-title">Tavern notes</h3>
+            <p class="barrel-sub">House rules while you warm by the fire.</p>
+            <div class="barrel-stat"><span>Ground truth</span><span>Winning Bid</span></div>
+            <div class="barrel-stat"><span>Unsold / ask</span><span>Ignored</span></div>
+            <div class="barrel-stat"><span>Gold / TC</span><span>≈ 41,000</span></div>
+            <div class="barrel-stat"><span>Retrain</span><span>every 1k</span></div>
+            <p class="barrel-hint">Rare locked cosmetics get a liquidity haircut — not face gold converted to TC.</p>
+          </div>
+
+          <div class="barrel-pane" data-for="explore" id="barrel-explore">
+            <h3 class="barrel-title">Ledger filters</h3>
+            <p class="barrel-sub">Turn the page with a finer hand.</p>
+            <div class="field">
+              <label>Vocation path</label>
+              <select id="f-voc">
+                <option value="">Any path</option>
+                <option value="Knight">Knight (incl. Elite)</option>
+                <option value="Paladin">Paladin (incl. Royal)</option>
+                <option value="Sorcerer">Sorcerer (incl. Master)</option>
+                <option value="Druid">Druid (incl. Elder)</option>
+                <option value="Monk">Monk (incl. Exalted)</option>
+                <option value="None">None</option>
+              </select>
+            </div>
+            <div class="field"><label>World contains</label><input id="f-world" placeholder="e.g. Antica" /></div>
+            <div class="field"><label>Min level</label><input id="f-minlvl" type="number" min="0" /></div>
+            <div class="field"><label>Max level</label><input id="f-maxlvl" type="number" min="0" /></div>
+            <div class="field"><label>Min purse (TC)</label><input id="f-minbid" type="number" min="0" /></div>
+            <div class="field"><label>Search the names</label><input id="f-q" placeholder="name / highlight" /></div>
+            <button class="primary" id="btn-filter" type="button">Turn the page</button>
+            <button class="btn-ghost" id="btn-filter-clear" type="button">Clear filters</button>
+            <p class="barrel-hint">Finished Winning Bids only. Press Enter in a field to turn the page.</p>
+          </div>
+
+          <div class="barrel-pane" data-for="predict" id="barrel-predict">
+            <h3 class="barrel-title">Desk notes</h3>
+            <p class="barrel-sub">While you appraise in the middle.</p>
+            <div class="barrel-stat"><span>Ground truth</span><span>Winning Bid</span></div>
+            <div class="barrel-stat"><span>Live fetch</span><span>Tibia.com</span></div>
+            <div class="barrel-stat"><span>Gold / TC</span><span>≈ 41,000</span></div>
+            <p class="barrel-hint">Rare locked cosmetics get a liquidity haircut — not face gold converted to TC.</p>
+          </div>
+
+          <div class="barrel-pane" data-for="history" id="barrel-history">
+            <h3 class="barrel-title">Craft tools</h3>
+            <p class="barrel-sub">Watch the miss shrink as the sample fills.</p>
+            <div class="barrel-stat"><span>Next craft</span><span id="barrel-next-craft">—</span></div>
+            <div class="barrel-stat"><span>Enriched sold</span><span id="barrel-enriched">—</span></div>
+            <p class="barrel-hint">Stratified across price bands so cheap characters aren’t drowned by the rich.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+<footer>Not affiliated with CipSoft · only Winning Bids teach this ledger · ~30-day window</footer>
+  <script>
+    const fmt = n => n == null || n === '' ? '—' : Number(n).toLocaleString();
+    const tabs = document.querySelectorAll('.nav-rail button[data-tab]');
+    const TAB_HASH = { overview: 'hearth', explore: 'ledger', predict: 'appraisal', history: 'craft' };
+    const HASH_TAB = Object.fromEntries(Object.entries(TAB_HASH).map(([k,v]) => [v, k]));
+    function resizeVisibleCharts(tab) {
+      const ids = tab === 'history'
+        ? ['chart-hist-mae', 'chart-hist-mape', 'chart-hist-r2']
+        : tab === 'overview'
+          ? ['chart-voc', 'chart-level', 'chart-importance', 'chart-hist']
+          : [];
+      requestAnimationFrame(() => {
+        ids.forEach(id => {
+          const el = document.getElementById(id);
+          if (el && el.data) {
+            try { Plotly.Plots.resize(id); } catch (e) {}
+          }
+        });
+      });
+    }
+    function setBarrelFor(tab) {
+      document.querySelectorAll('.barrel-pane').forEach(p => {
+        p.classList.toggle('active', p.dataset.for === tab);
+      });
+    }
+    function showTab(tab, opts = {}) {
+      const t = ['overview','explore','predict','history'].includes(tab) ? tab : 'predict';
+      tabs.forEach(b => {
+        const on = b.dataset.tab === t;
+        b.classList.toggle('active', on);
+        if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+      });
+      ['overview','explore','predict','history'].forEach(name => {
+        document.getElementById('tab-' + name).classList.toggle('hidden', name !== t);
+      });
+      setBarrelFor(t);
+      resizeVisibleCharts(t);
+      if (t === 'history') loadHistory().catch(e => console.error(e));
+      if (t === 'explore') loadExplore().catch(e => console.error(e));
+      if (!opts.skipHash) {
+        const hash = TAB_HASH[t] || 'appraisal';
+        if (location.hash.replace('#','') !== hash) history.replaceState(null, '', '#' + hash);
+      }
+      if (t === 'predict' && opts.focus) {
+        const inp = document.getElementById('pred-input');
+        if (inp) { inp.focus(); if (opts.select) inp.select(); }
+      }
+    }
+    function goAppraise(auctionId) {
+      const inp = document.getElementById('pred-input');
+      if (inp) inp.value = String(auctionId);
+      showTab('predict', { focus: true, select: true });
+      document.getElementById('btn-predict').click();
+    }
+    tabs.forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
+    window.addEventListener('hashchange', () => {
+      const t = HASH_TAB[(location.hash || '').replace('#','').toLowerCase()] || 'predict';
+      showTab(t, { skipHash: true });
+    });
+    const bootTab = HASH_TAB[(location.hash || '').replace('#','').toLowerCase()] || 'predict';
+    showTab(bootTab, { skipHash: true });
+
+
+    // Faint torchlight follows the cursor (smoothed)
+    (() => {
+      const root = document.documentElement;
+      let tx = window.innerWidth * 0.5, ty = window.innerHeight * 0.35;
+      let cx = tx, cy = ty;
+      let raf = 0;
+      const tick = () => {
+        cx += (tx - cx) * 0.32;
+        cy += (ty - cy) * 0.32;
+        root.style.setProperty('--mx', cx.toFixed(1));
+        root.style.setProperty('--my', cy.toFixed(1));
+        raf = requestAnimationFrame(tick);
+      };
+      window.addEventListener('pointermove', (e) => {
+        tx = e.clientX;
+        ty = e.clientY;
+      }, { passive: true });
+      window.addEventListener('pointerleave', () => {
+        tx = window.innerWidth * 0.5;
+        ty = window.innerHeight * 0.35;
+      });
+      raf = requestAnimationFrame(tick);
+    })();
+
+    async function loadOverview() {
+      const res = await fetch('/api/overview');
+      const data = await res.json();
+      const m = data.metrics || {};
+      const lgb = m.lightgbm || {};
+      document.getElementById('metric-pill').innerHTML =
+        `Model miss ~<strong>${lgb.MAE != null ? Math.round(lgb.MAE).toLocaleString() : '—'}</strong> TC` +
+        (lgb.MAPE != null ? ` · ${lgb.MAPE.toFixed(0)}%` : '') +
+        (m.n_train != null ? `<br><span style="opacity:.8">trained on ${fmt(m.n_train)} sales</span>` : '');
+      document.getElementById('overview-stats').innerHTML = `
+        <div class="stat"><div class="label">Names in the book</div><div class="value">${fmt(data.n_rows)}</div></div>
+        <div class="stat"><div class="label">True sales (Winning Bid)</div><div class="value">${fmt(data.n_trainable)}</div></div>
+        <div class="stat"><div class="label">Signals we weigh</div><div class="value">${fmt(m.n_features)}</div></div>`;
+
+      Plotly.newPlot('chart-voc', [{
+        type: 'bar',
+        x: (data.by_vocation || []).map(r => r.vocation),
+        y: (data.by_vocation || []).map(r => r.median),
+        marker: { color: '#c9a227' },
+        hovertext: (data.by_vocation || []).map(r => `n=${r.count}`),
+      }], {
+        title: 'Median purse by vocation',
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#efe6d6' }, margin: { t: 40, r: 20, b: 40, l: 50 },
+        yaxis: { title: 'TC' }
+      }, {responsive: true, displayModeBar: false});
+
+      Plotly.newPlot('chart-level', [{
+        type: 'bar',
+        x: (data.by_level || []).map(r => r.level_bin),
+        y: (data.by_level || []).map(r => r.median),
+        marker: { color: '#8faf9a' },
+        hovertext: (data.by_level || []).map(r => `n=${r.count}`),
+      }], {
+        title: 'Median purse by level band',
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#efe6d6' }, margin: { t: 40, r: 20, b: 60, l: 50 },
+        yaxis: { title: 'TC' }
+      }, {responsive: true, displayModeBar: false});
+
+      const imp = data.feature_importance || [];
+      Plotly.newPlot('chart-importance', [{
+        type: 'bar', orientation: 'h',
+        y: imp.map(r => r.feature).reverse(),
+        x: imp.map(r => r.importance).reverse(),
+        marker: { color: '#7dba8a' },
+      }], {
+        title: 'What moves the purse',
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#efe6d6' }, margin: { t: 40, r: 20, b: 40, l: 140 },
+        height: 420,
+      }, {responsive: true, displayModeBar: false});
+
+      Plotly.newPlot('chart-hist', [{
+        type: 'histogram', x: data.price_sample || [], marker: { color: '#b5a690' }, nbinsx: 40,
+      }], {
+        title: 'Sold purses in the ledger',
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#efe6d6' }, margin: { t: 40, r: 20, b: 40, l: 50 },
+        xaxis: { title: 'TC' }, yaxis: { title: 'Count' }
+      }, {responsive: true, displayModeBar: false});
+    }
+
+    async function loadExplore() {
+      const countEl = document.getElementById('explore-count');
+      const bodyEl = document.getElementById('explore-body');
+      const btn = document.getElementById('btn-filter');
+      try {
+        if (btn) { btn.disabled = true; btn.textContent = 'Turning…'; }
+        const params = new URLSearchParams({ limit: '150', trainable_only: 'true' });
+        const voc = document.getElementById('f-voc').value;
+        const world = document.getElementById('f-world').value;
+        const minlvl = document.getElementById('f-minlvl').value;
+        const maxlvl = document.getElementById('f-maxlvl').value;
+        const minbid = document.getElementById('f-minbid').value;
+        const q = document.getElementById('f-q').value;
+        if (voc) params.set('vocation', voc);
+        if (world) params.set('world', world);
+        if (minlvl) params.set('min_level', minlvl);
+        if (maxlvl) params.set('max_level', maxlvl);
+        if (minbid) params.set('min_bid', minbid);
+        if (q) params.set('q', q);
+        const res = await fetch('/api/auctions?' + params.toString());
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || ('Ledger error ' + res.status));
+        countEl.textContent = `${data.total} kin in the ledger · showing ${data.rows.length}`;
+        bodyEl.innerHTML = data.rows.map(r => `
+          <tr class="clickable" data-auction-id="${r.auction_id}">
+            <td><a href="https://www.tibia.com/charactertrade/?subtopic=currentcharactertrades&page=details&auctionid=${r.auction_id}" target="_blank" onclick="event.stopPropagation()">${r.auction_id}</a></td>
+            <td>${r.name || ''}</td>
+            <td>${fmt(r.level)}</td>
+            <td>${r.vocation || ''}</td>
+            <td>${r.world || ''}</td>
+            <td>${fmt(r.winning_bid || r.bid)}</td>
+            <td>${fmt(r.max_combat_skill)}</td>
+            <td>${fmt(r.charm_points_total)}</td>
+            <td class="row-actions"><button type="button" data-appraise="${r.auction_id}">Appraise</button></td>
+          </tr>`).join('') || '<tr><td colspan="9" class="muted">No kin matched these filters.</td></tr>';
+      } catch (e) {
+        if (countEl) countEl.textContent = 'Could not turn the page';
+        if (bodyEl) bodyEl.innerHTML = `<tr><td colspan="9" class="err">${e.message || e}</td></tr>`;
+        console.error(e);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Turn the page'; }
+      }
+    }
+
+    document.getElementById('btn-filter').addEventListener('click', (ev) => {
+      ev.preventDefault();
+      loadExplore();
+    });
+    document.getElementById('btn-filter-clear').addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ['f-voc','f-world','f-minlvl','f-maxlvl','f-minbid','f-q'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = '';
+      });
+      loadExplore();
+    });
+    ['f-voc','f-world','f-minlvl','f-maxlvl','f-minbid','f-q'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); loadExplore(); }
+      });
+    });
+    document.getElementById('explore-body').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('[data-appraise]');
+      if (btn) { ev.preventDefault(); goAppraise(btn.getAttribute('data-appraise')); return; }
+      const tr = ev.target.closest('tr[data-auction-id]');
+      if (tr && !ev.target.closest('a')) goAppraise(tr.getAttribute('data-auction-id'));
+    });
+
+    async function runAppraise() {
+      const input = document.getElementById('pred-input').value.trim();
+      const btn = document.getElementById('btn-predict');
+      const err = document.getElementById('pred-error');
+      const box = document.getElementById('pred-result');
+      const verdict = document.getElementById('pred-verdict');
+      err.classList.add('hidden'); box.classList.add('hidden');
+      if (verdict) { verdict.classList.add('hidden'); verdict.textContent = '—'; }
+      const confEl0 = document.getElementById('pred-confidence');
+      if (confEl0) confEl0.classList.add('hidden');
+      if (!input) { err.textContent = 'Paste a URL or auction id'; err.classList.remove('hidden'); return; }
+      btn.disabled = true; btn.textContent = 'Fetching…';
+      try {
+        const res = await fetch('/api/predict', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auction: input })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const d = data.detail;
+          const msg = Array.isArray(d)
+            ? d.map(x => x.msg || JSON.stringify(x)).join('; ')
+            : (typeof d === 'string' ? d : (d && d.message) || 'Appraisal failed');
+          throw new Error(msg);
+        }
+        const d = data.detail || {}, p = data.prediction || {};
+        const bidLabel = (() => {
+          if (d.is_sold && d.winning_bid != null) return `Sold / winning bid ${fmt(d.winning_bid)} TC`;
+          if (d.bid_type === 'Minimum Bid' || (d.minimum_bid != null && !d.is_sold)) {
+            const v = d.minimum_bid != null ? d.minimum_bid : d.listed_bid;
+            const live = d.is_live_unsold ? 'Current auction (unsold)' : 'Unsold (minimum bid)';
+            return `${live}: minimum bid ${fmt(v)} TC — not a sold price`;
+          }
+          if (d.bid_type === 'Current Bid' && d.listed_bid != null)
+            return `Current auction (in progress): current bid ${fmt(d.listed_bid)} TC — not a sold price`;
+          if (d.listed_bid != null) return `Listed bid ${fmt(d.listed_bid)} TC (${d.bid_type || 'unknown type'})`;
+          return 'Live / unknown bid';
+        })();
+        const hv = (d.high_value_assets || []).length
+          ? ` · HV: ${(d.high_value_assets || []).map(x => x.replace(/^has_/, '')).join(', ')}`
+          : (d.has_golden_outfit ? ' · Golden Outfit' : '');
+        document.getElementById('pred-char').textContent =
+          `${d.name || 'Auction ' + data.auction_id} · Level ${d.level || '?'} ${d.vocation || ''} · ` +
+          bidLabel + hv;
+        document.getElementById('pred-price').textContent = `${fmt(Math.round(p.fair_price))} TC`;
+        const confEl = document.getElementById('pred-confidence');
+        if (confEl) {
+          const fair = Number(p.fair_price) || 0;
+          const lo = Number(p.fair_price_low);
+          const hi = Number(p.fair_price_high);
+          if (fair > 0 && Number.isFinite(lo) && Number.isFinite(hi) && hi >= lo) {
+            const widthPct = 100 * (hi - lo) / fair;
+            let cls = 'med', label = 'Medium confidence';
+            if (widthPct <= 45) { cls = 'high'; label = 'High confidence'; }
+            else if (widthPct >= 85) { cls = 'low'; label = 'Low confidence'; }
+            confEl.className = 'confidence ' + cls;
+            confEl.textContent = `${label} · band ±${(widthPct/2).toFixed(0)}%`;
+            confEl.title = `Fair range width is ${widthPct.toFixed(0)}% of the point estimate (${fmt(Math.round(lo))}–${fmt(Math.round(hi))} TC)`;
+            confEl.classList.remove('hidden');
+          } else {
+            confEl.classList.add('hidden');
+          }
+        }
+        window.__lastAppraisal = {
+          auction_id: data.auction_id,
+          name: d.name || ('Auction ' + data.auction_id),
+          level: d.level,
+          vocation: d.vocation,
+          world: d.world,
+          fair_price: p.fair_price,
+          fair_price_low: p.fair_price_low,
+          fair_price_high: p.fair_price_high,
+          winning_bid: d.winning_bid,
+          listed_bid: d.listed_bid,
+          is_sold: !!d.is_sold,
+          url: d.url || '',
+          saved_at: new Date().toISOString(),
+        };
+        if (verdict) {
+          const fair = Number(p.fair_price) || 0;
+          let ref = null, refLabel = '';
+          if (d.is_sold && d.winning_bid != null) { ref = Number(d.winning_bid); refLabel = 'sold'; }
+          else if (d.minimum_bid != null || (d.is_live_unsold && d.listed_bid != null)) {
+            ref = Number(d.minimum_bid != null ? d.minimum_bid : d.listed_bid); refLabel = 'ask';
+          } else if (d.listed_bid != null) { ref = Number(d.listed_bid); refLabel = 'listed'; }
+          if (ref != null && ref > 0 && fair > 0) {
+            const pct = 100 * (ref - fair) / fair;
+            const abs = Math.abs(pct);
+            let cls = 'warn', text = `Near fair (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% vs model)`;
+            if (refLabel === 'sold') {
+              if (pct <= -12) { cls = 'good'; text = `Sold cheap (−${abs.toFixed(0)}% vs fair)`; }
+              else if (pct >= 12) { cls = 'bad'; text = `Sold rich (+${abs.toFixed(0)}% vs fair)`; }
+              else { cls = 'warn'; text = `Sold near fair (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%)`; }
+            } else {
+              if (pct <= -12) { cls = 'good'; text = `Ask looks cheap (−${abs.toFixed(0)}% vs fair)`; }
+              else if (pct >= 12) { cls = 'bad'; text = `Ask looks rich (+${abs.toFixed(0)}% vs fair)`; }
+              else { cls = 'warn'; text = `Ask near fair (${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%)`; }
+            }
+            verdict.className = 'verdict ' + cls;
+            verdict.textContent = text;
+            verdict.classList.remove('hidden');
+          } else {
+            verdict.className = 'verdict muted';
+            verdict.textContent = 'No listed bid to compare';
+            verdict.classList.remove('hidden');
+          }
+        }
+        const gptc = p.gold_per_tc || 41000;
+        const goldEq = p.fair_price_gold_equiv != null ? p.fair_price_gold_equiv : (p.fair_price || 0) * gptc;
+        const goldNote = document.getElementById('pred-gold');
+        if (goldNote) {
+          goldNote.textContent = `≈ ${fmt(Math.round(goldEq))} gold at ${fmt(gptc)} gold/TC (display only — bazaar price is willingness-to-pay, not gold parity)`;
+        }
+        let rangeTxt =
+          `Suggested fair range ${fmt(Math.round(p.fair_price_low))} – ${fmt(Math.round(p.fair_price_high))} TC` +
+          (p.ridge_price != null ? ` · Ridge baseline ${fmt(Math.round(p.ridge_price))} TC` : '');
+        if ((d.bid_type === 'Minimum Bid' || d.is_live_unsold) && (d.minimum_bid != null || d.listed_bid != null)) {
+          const ask = d.minimum_bid != null ? d.minimum_bid : d.listed_bid;
+          const fair = p.fair_price || 0;
+          const delta = fair - ask;
+          const pct = ask > 0 ? (100 * delta / ask) : null;
+          rangeTxt += ` · vs minimum bid ${fmt(ask)} TC (` +
+            (pct == null ? 'n/a' : ((delta >= 0 ? '+' : '') + Math.round(pct) + '% vs ask')) +
+            ') — estimate only, auction unsold';
+        }
+        document.getElementById('pred-range').textContent = rangeTxt;
+        document.getElementById('pred-highlights').innerHTML =
+          (d.highlights || []).slice(0, 8).map(h => `<span class="chip">${h}</span>`).join('');
+        document.getElementById('pred-drivers').innerHTML =
+          (p.drivers || []).map(x => `<div class="chip">${x.feature}: ${fmt(x.value)} <span class="muted">(imp ${x.importance})</span></div>`).join('') || '<span class="muted">n/a</span>';
+        document.getElementById('pred-comps').innerHTML = (data.comps || []).map(c => `
+          <tr>
+            <td><a href="${c.url}" target="_blank">${c.auction_id}</a></td>
+            <td>${c.name || ''}</td><td>${fmt(c.level)}</td><td>${c.vocation || ''}</td>
+            <td>${c.world || ''}</td><td>${fmt(c.winning_bid)}</td>
+          </tr>`).join('');
+        document.getElementById('pred-caveats').innerHTML =
+          (data.caveats || []).map(c => `<p class="caveat">• ${c}</p>`).join('');
+        box.classList.remove('hidden');
+        box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {
+        err.textContent = e.message || String(e);
+        err.classList.remove('hidden');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Appraise';
+      }
+    }
+    document.getElementById('btn-predict').addEventListener('click', (ev) => {
+      ev.preventDefault();
+      runAppraise();
+    });
+    document.getElementById('pred-input').addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); runAppraise(); }
+    });
+
+
+    async function loadHistory() {
+      const res = await fetch('/api/metrics-history');
+      const data = await res.json();
+      const rows = data.history || [];
+      document.getElementById('history-stats').innerHTML = `
+        <div class="stat"><div class="label">Sold characters studied</div><div class="value">${fmt(data.n_enriched_sold)}</div></div>
+        <div class="stat"><div class="label">Last craft mark</div><div class="value">${fmt(data.last_checkpoint)}</div></div>
+        <div class="stat"><div class="label">Next sharpening at</div><div class="value">${fmt(data.next_retrain_at)}</div></div>`;
+      const be = document.getElementById('barrel-enriched');
+      const bn = document.getElementById('barrel-next-craft');
+      if (be) be.textContent = fmt(data.n_enriched_sold);
+      if (bn) bn.textContent = fmt(data.next_retrain_at);
+
+      const xs = rows.map(r => r.n_enriched_sold);
+      const lgbMae = rows.map(r => (r.lightgbm || {}).MAE);
+      const ridgeMae = rows.map(r => (r.ridge || {}).MAE);
+      const lgbMape = rows.map(r => (r.lightgbm || {}).MAPE);
+      const ridgeMape = rows.map(r => (r.ridge || {}).MAPE);
+      const lgbR2 = rows.map(r => (r.lightgbm || {}).R2_price);
+      const ridgeR2 = rows.map(r => (r.ridge || {}).R2_price);
+
+      const storyEl = document.getElementById('history-story');
+      if (storyEl && rows.length) {
+        const first = rows[0], last = rows[rows.length - 1];
+        const fl = first.lightgbm || {}, ll = last.lightgbm || {};
+        const dMae = (fl.MAE != null && ll.MAE != null) ? (ll.MAE - fl.MAE) : null;
+        const dMape = (fl.MAPE != null && ll.MAPE != null) ? (ll.MAPE - fl.MAPE) : null;
+        const dR2 = (fl.R2_price != null && ll.R2_price != null) ? (ll.R2_price - fl.R2_price) : null;
+        const steps = rows.map(r => {
+          const l = r.lightgbm || {};
+          return `<li><strong>${r.checkpoint_label || r.note || 'craft'}</strong> · n=${fmt(r.n_enriched_sold)} · MAE ${l.MAE != null ? Math.round(l.MAE).toLocaleString() : '—'} TC · MAPE ${l.MAPE != null ? l.MAPE.toFixed(1) : '—'}% · R² ${l.R2_price != null ? l.R2_price.toFixed(3) : '—'}</li>`;
+        }).join('');
+        storyEl.innerHTML = `
+          <h3 style="margin:0 0 0.35rem;font-size:1rem">Craft chronicle</h3>
+          <p class="ink-sm" style="margin-bottom:0.65rem">
+            From first fire to latest sharpening:
+            MAE ${dMae == null ? '—' : ((dMae <= 0 ? '↓ ' : '↑ ') + Math.abs(Math.round(dMae)).toLocaleString() + ' TC')},
+            MAPE ${dMape == null ? '—' : ((dMape <= 0 ? '↓ ' : '↑ ') + Math.abs(dMape).toFixed(1) + ' pp')},
+            R² ${dR2 == null ? '—' : ((dR2 >= 0 ? '↑ ' : '↓ ') + Math.abs(dR2).toFixed(3))}.
+          </p>
+          <ol class="ink-sm" style="margin:0;padding-left:1.2rem;line-height:1.55">${steps}</ol>`;
+      }
+
+      const plotLayout = (title, yTitle) => ({
+        title: { text: title, font: { size: 14 } },
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#efe6d6', size: 11 },
+        margin: { t: 48, r: 12, b: 48, l: 56 },
+        height: 340,
+        autosize: true,
+        xaxis: { title: 'n enriched', automargin: true, zeroline: false },
+        yaxis: { title: yTitle, automargin: true, zeroline: false, fixedrange: true },
+        legend: { orientation: 'h', y: 1.12, x: 0, xanchor: 'left' },
+        showlegend: true,
+      });
+      const plotCfg = { responsive: true, displayModeBar: false, staticPlot: false };
+
+      Plotly.newPlot('chart-hist-mae', [
+        { x: xs, y: lgbMae, name: 'LightGBM', mode: 'lines+markers', line: { color: '#7dba8a' }, cliponaxis: true },
+        { x: xs, y: ridgeMae, name: 'Ridge', mode: 'lines+markers', line: { color: '#8faf9a' }, cliponaxis: true },
+      ], plotLayout('Absolute miss as the ledger grows', 'MAE (TC)'), plotCfg);
+
+      Plotly.newPlot('chart-hist-mape', [
+        { x: xs, y: lgbMape, name: 'LightGBM', mode: 'lines+markers', line: { color: '#c9a227' }, cliponaxis: true },
+        { x: xs, y: ridgeMape, name: 'Ridge', mode: 'lines+markers', line: { color: '#c97a6d' }, cliponaxis: true },
+      ], plotLayout('Relative miss as the ledger grows', 'MAPE %'), plotCfg);
+
+      Plotly.newPlot('chart-hist-r2', [
+        { x: xs, y: lgbR2, name: 'LightGBM', mode: 'lines+markers', line: { color: '#7dba8a' }, cliponaxis: true },
+        { x: xs, y: ridgeR2, name: 'Ridge', mode: 'lines+markers', line: { color: '#c9a227' }, cliponaxis: true },
+      ], plotLayout('Price R² as the ledger grows', 'R² (price)'), plotCfg);
+
+      // Plotly mis-sizes when first drawn in a hidden tab — fix on next frame
+      requestAnimationFrame(() => {
+        ['chart-hist-mae','chart-hist-mape','chart-hist-r2'].forEach(id => {
+          try { Plotly.Plots.resize(id); } catch (e) {}
+        });
+      });
+
+      const fmtN = v => v == null || v === '' ? '—' : (typeof v === 'number' ? (Number.isInteger(v) ? fmt(v) : v.toFixed(2)) : v);
+      document.getElementById('history-body').innerHTML = rows.slice().reverse().map(r => {
+        const l = r.lightgbm || {};
+        const tops = (r.top_features || []).slice(0, 5).map(t => t.feature).join(', ');
+        const when = (r.timestamp || '').replace('T', ' ').replace('+00:00', 'Z').slice(0, 19);
+        return `<tr>
+          <td>${when || '—'}</td>
+          <td>${r.checkpoint_label || r.note || '—'}</td>
+          <td>${fmt(r.n_enriched_sold)}</td>
+          <td>${fmt(r.n_train)} / ${fmt(r.n_test)}</td>
+          <td>${l.MAE != null ? Math.round(l.MAE).toLocaleString() : '—'}</td>
+          <td>${l.MAPE != null ? l.MAPE.toFixed(1) + '%' : '—'}</td>
+          <td>${l.R2_price != null ? l.R2_price.toFixed(3) : '—'}</td>
+          <td class="muted" style="max-width:260px">${tops || '—'}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="8" class="muted">No retrain history yet</td></tr>';
+    }
+
+    loadOverview().catch(e => console.error(e));
+    fetch('/api/auctions?limit=4&trainable_only=true').then(r => r.json()).then(data => {
+      const wrap = document.getElementById('quick-appraise');
+      if (!wrap || !data.rows) return;
+      wrap.innerHTML = data.rows.slice(0, 3).map(r =>
+        `<button type="button" data-quick="${r.auction_id}">Try ${r.name || r.auction_id}</button>`
+      ).join('');
+      wrap.addEventListener('click', (ev) => {
+        const b = ev.target.closest('[data-quick]');
+        if (b) goAppraise(b.getAttribute('data-quick'));
+      });
+    }).catch(() => {});
+    fetch('/api/metrics-history').then(r => r.json()).then(data => {
+      const be = document.getElementById('barrel-enriched');
+      const bn = document.getElementById('barrel-next-craft');
+      if (be) be.textContent = fmt(data.n_enriched_sold);
+      if (bn) bn.textContent = fmt(data.next_retrain_at);
+    }).catch(() => {});
+    // History / ledger load on tab open. Appraisal is the default chapter.
+
+    // --- Mobile barrel drawer ---
+    (() => {
+      const rail = document.getElementById('barrel-rail');
+      const fab = document.getElementById('barrel-fab');
+      const backdrop = document.getElementById('barrel-backdrop');
+      if (!rail || !fab || !backdrop) return;
+      const close = () => {
+        rail.classList.remove('open');
+        backdrop.classList.remove('open');
+        backdrop.hidden = true;
+        fab.setAttribute('aria-expanded', 'false');
+      };
+      const open = () => {
+        rail.classList.add('open');
+        backdrop.hidden = false;
+        backdrop.classList.add('open');
+        fab.setAttribute('aria-expanded', 'true');
+      };
+      fab.addEventListener('click', () => {
+        if (rail.classList.contains('open')) close(); else open();
+      });
+      backdrop.addEventListener('click', close);
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape') close();
+      });
+      // Close drawer after filter/appraise actions on small screens
+      const maybeClose = () => { if (window.matchMedia('(max-width: 1100px)').matches) close(); };
+      document.getElementById('btn-filter')?.addEventListener('click', () => setTimeout(maybeClose, 0));
+    })();
+
+    // --- Resize deeper hearth charts when opened ---
+    document.getElementById('hearth-more')?.addEventListener('toggle', (ev) => {
+      if (ev.target.open) {
+        requestAnimationFrame(() => {
+          ['chart-importance', 'chart-hist'].forEach(id => {
+            try { Plotly.Plots.resize(id); } catch (e) {}
+          });
+        });
+      }
+    });
+
+    // --- Saved appraisals + compare (localStorage) ---
+    const SAVED_KEY = 'tibia_trade_saved_appraisals_v1';
+    const COMPARE_KEY = 'tibia_trade_compare_ids_v1';
+    function loadSaved() {
+      try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); }
+      catch { return []; }
+    }
+    function writeSaved(rows) {
+      localStorage.setItem(SAVED_KEY, JSON.stringify(rows.slice(0, 24)));
+    }
+    function loadCompareIds() {
+      try { return JSON.parse(localStorage.getItem(COMPARE_KEY) || '[]'); }
+      catch { return []; }
+    }
+    function writeCompareIds(ids) {
+      localStorage.setItem(COMPARE_KEY, JSON.stringify(ids.slice(0, 2)));
+    }
+    function renderSaved() {
+      const list = document.getElementById('saved-list');
+      const panel = document.getElementById('saved-panel');
+      if (!list) return;
+      const rows = loadSaved();
+      const compareIds = new Set(loadCompareIds().map(String));
+      if (!rows.length) {
+        list.innerHTML = '<div class="muted">No saved appraisals yet.</div>';
+        renderCompare();
+        return;
+      }
+      list.innerHTML = rows.map(r => `
+        <div class="saved-item" data-id="${r.auction_id}">
+          <div>
+            <div><strong>${r.name || r.auction_id}</strong> · ${fmt(Math.round(r.fair_price))} TC fair</div>
+            <div class="meta">#${r.auction_id} · L${r.level || '?'} ${r.vocation || ''} · ${r.is_sold && r.winning_bid != null ? 'sold ' + fmt(r.winning_bid) : 'unsold/live'}</div>
+          </div>
+          <div class="actions">
+            <button type="button" data-reload="${r.auction_id}">Open</button>
+            <button type="button" data-compare-toggle="${r.auction_id}">${compareIds.has(String(r.auction_id)) ? 'In compare' : 'Compare'}</button>
+            <button type="button" data-forget="${r.auction_id}">Remove</button>
+          </div>
+        </div>`).join('');
+      renderCompare();
+    }
+    function renderCompare() {
+      const panel = document.getElementById('compare-panel');
+      const grid = document.getElementById('compare-grid');
+      const delta = document.getElementById('compare-delta');
+      if (!panel || !grid || !delta) return;
+      const ids = loadCompareIds().map(String);
+      const byId = Object.fromEntries(loadSaved().map(r => [String(r.auction_id), r]));
+      const picks = ids.map(id => byId[id]).filter(Boolean);
+      if (picks.length < 1) {
+        panel.classList.add('hidden');
+        return;
+      }
+      panel.classList.remove('hidden');
+      grid.innerHTML = picks.map(r => `
+        <div class="compare-card">
+          <h4>${r.name || r.auction_id}</h4>
+          <div class="muted" style="font-size:0.82rem;margin-bottom:0.35rem">#${r.auction_id} · L${r.level || '?'} ${r.vocation || ''} · ${r.world || ''}</div>
+          <div class="fair">${fmt(Math.round(r.fair_price))} TC</div>
+          <div class="muted" style="font-size:0.8rem;margin-top:0.25rem">range ${fmt(Math.round(r.fair_price_low))} – ${fmt(Math.round(r.fair_price_high))}</div>
+          <div class="muted" style="font-size:0.8rem;margin-top:0.35rem">${r.is_sold && r.winning_bid != null ? 'Sold ' + fmt(r.winning_bid) + ' TC' : 'No sold price'}</div>
+        </div>`).join('');
+      if (picks.length === 2) {
+        const [a, b] = picks;
+        const diff = (a.fair_price || 0) - (b.fair_price || 0);
+        const richer = diff >= 0 ? a : b;
+        const leaner = diff >= 0 ? b : a;
+        delta.innerHTML = `<strong>${richer.name || richer.auction_id}</strong> fair is <strong>${fmt(Math.round(Math.abs(diff)))} TC</strong> higher than <strong>${leaner.name || leaner.auction_id}</strong> (${diff >= 0 ? '+' : ''}${((100 * diff) / (b.fair_price || 1)).toFixed(0)}% vs B).`;
+      } else {
+        delta.textContent = 'Add one more saved appraisal to compare.';
+      }
+    }
+    document.getElementById('btn-save-appraisal')?.addEventListener('click', () => {
+      const row = window.__lastAppraisal;
+      if (!row || row.auction_id == null) return;
+      const rows = loadSaved().filter(r => String(r.auction_id) !== String(row.auction_id));
+      rows.unshift(row);
+      writeSaved(rows);
+      renderSaved();
+    });
+    document.getElementById('btn-add-compare')?.addEventListener('click', () => {
+      const row = window.__lastAppraisal;
+      if (!row || row.auction_id == null) return;
+      // ensure saved
+      const rows = loadSaved().filter(r => String(r.auction_id) !== String(row.auction_id));
+      rows.unshift(row);
+      writeSaved(rows);
+      let ids = loadCompareIds().map(String).filter(id => id !== String(row.auction_id));
+      ids.push(String(row.auction_id));
+      if (ids.length > 2) ids = ids.slice(-2);
+      writeCompareIds(ids);
+      renderSaved();
+      document.getElementById('compare-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    document.getElementById('btn-clear-compare')?.addEventListener('click', () => {
+      writeCompareIds([]);
+      renderSaved();
+    });
+    document.getElementById('saved-list')?.addEventListener('click', (ev) => {
+      const open = ev.target.closest('[data-reload]');
+      if (open) { goAppraise(open.getAttribute('data-reload')); return; }
+      const forget = ev.target.closest('[data-forget]');
+      if (forget) {
+        const id = forget.getAttribute('data-forget');
+        writeSaved(loadSaved().filter(r => String(r.auction_id) !== String(id)));
+        writeCompareIds(loadCompareIds().filter(x => String(x) !== String(id)));
+        renderSaved();
+        return;
+      }
+      const cmp = ev.target.closest('[data-compare-toggle]');
+      if (cmp) {
+        const id = String(cmp.getAttribute('data-compare-toggle'));
+        let ids = loadCompareIds().map(String);
+        if (ids.includes(id)) ids = ids.filter(x => x !== id);
+        else {
+          ids.push(id);
+          if (ids.length > 2) ids = ids.slice(-2);
+        }
+        writeCompareIds(ids);
+        renderSaved();
+      }
+    });
+    renderSaved();
+  </script>
+</body>
+</html>

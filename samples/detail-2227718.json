@@ -1,0 +1,270 @@
+{
+  "auction_id": 2227718,
+  "url": "https://www.tibia.com/charactertrade/?auctionid=2227718&page=details&subtopic=pastcharactertrades",
+  "name": "Fouraccessazz",
+  "level": 785,
+  "vocation": "Elite Knight",
+  "sex": "Male",
+  "world": "Quintera",
+  "auction_start": "Aug\u00a010\u00a02026, 10:06\u00a0CEST",
+  "auction_end": "Aug\u00a013\u00a02026, 22:00\u00a0CEST",
+  "bid_type": "Winning Bid",
+  "bid": 23001,
+  "status": "finished",
+  "list_highlights": [
+    "1x a gold pouch (Store Item)",
+    "1x a ferumbras exercise dummy (Store Item)",
+    "Additional Slots: Prey, Weekly Tasks",
+    "Charm Points: 6970 (Unused: 210), Minor Charm Echoes: 950 (Unused: 100)",
+    "Exalted Dust/Dust Limit: 78/4340"
+  ],
+  "skills": [
+    {
+      "name": "Axe Fighting",
+      "level": 84,
+      "progress": 59.67
+    },
+    {
+      "name": "Club Fighting",
+      "level": 120,
+      "progress": 38.6
+    },
+    {
+      "name": "Distance Fighting",
+      "level": 23,
+      "progress": 37.78
+    },
+    {
+      "name": "Fishing",
+      "level": 10,
+      "progress": 0.0
+    },
+    {
+      "name": "Fist Fighting",
+      "level": 34,
+      "progress": 48.47
+    },
+    {
+      "name": "Magic Level",
+      "level": 12,
+      "progress": 29.74
+    },
+    {
+      "name": "Shielding",
+      "level": 109,
+      "progress": 51.48
+    },
+    {
+      "name": "Sword Fighting",
+      "level": 55,
+      "progress": 6.33
+    }
+  ],
+  "general": {
+    "stats": {
+      "hit_points": "11,840",
+      "mana": "3,975",
+      "capacity": "20,095",
+      "speed": "894",
+      "blessings": "7/7",
+      "mounts": "23",
+      "outfits": "39",
+      "titles": "25"
+    },
+    "additional": {
+      "creation_date": "Jun\u00a029\u00a02022,\u00a022:53:24\u00a0CEST",
+      "experience": "8,031,452,138",
+      "gold": "91,789",
+      "achievement_points": "417"
+    },
+    "transfer": {
+      "regular_world_transfer": "can be purchased and used after Nov\u00a029\u00a02026,\u00a009:17:00\u00a0CET"
+    },
+    "charms_meta": {
+      "charm_expansion": "yes",
+      "available_charm_points": "210",
+      "spent_charm_points": "6,760",
+      "available_minor_charm_echoes": "100",
+      "spent_minor_charm_echoes": "850"
+    },
+    "daily_rewards": {
+      "daily_reward_streak": "256"
+    },
+    "hunting": {
+      "hunting_task_points": "1,627",
+      "permanent_weekly_task_expansion": "yes",
+      "permanent_prey_slots": "1",
+      "prey_wildcards": "51"
+    },
+    "hirelings": {
+      "hirelings": "1",
+      "hireling_jobs": "1",
+      "hireling_outfits": "0"
+    },
+    "dust": {
+      "exalted_dust": "78/4,340"
+    },
+    "boss": {
+      "animus_masteries_unlocked": "44"
+    },
+    "bonus_promotion": {
+      "boss_points": "5,140"
+    }
+  },
+  "charms": [
+    {
+      "cost": 600,
+      "type": "Major",
+      "name": "Dodge",
+      "grade": 2
+    },
+    {
+      "cost": 2000,
+      "type": "Major",
+      "name": "Low Blow",
+      "grade": 2
+    },
+    {
+      "cost": 1000,
+      "type": "Major",
+      "name": "Parry",
+      "grade": 2
+    },
+    {
+      "cost": 600,
+      "type": "Major",
+      "name": "Poison",
+      "grade": 2
+    },
+    {
+      "cost": 2000,
+      "type": "Major",
+      "name": "Savage Blow",
+      "grade": 2
+    },
+    {
+      "cost": 240,
+      "type": "Major",
+      "name": "Wound",
+      "grade": 1
+    },
+    {
+      "cost": 320,
+      "type": "Major",
+      "name": "Zap",
+      "grade": 1
+    },
+    {
+      "cost": 100,
+      "type": "Minor",
+      "name": "Gut",
+      "grade": 1
+    },
+    {
+      "cost": 250,
+      "type": "Minor",
+      "name": "Vampiric Embrace",
+      "grade": 2
+    },
+    {
+      "cost": 250,
+      "type": "Minor",
+      "name": "Void Inversion",
+      "grade": 2
+    },
+    {
+      "cost": 250,
+      "type": "Minor",
+      "name": "Void's Call",
+      "grade": 2
+    }
+  ],
+  "counts": {
+    "items_page1_icons": 76,
+    "store_items_page1_icons": 9,
+    "mounts_page1_icons": 22,
+    "store_mounts_page1_icons": 1,
+    "outfits_page1_icons": 30,
+    "store_outfits_page1_icons": 2,
+    "familiars_page1_icons": 2,
+    "charms": 11
+  },
+  "item_summary_meta": {
+    "nav_text": "\u00bb Pages: 1 2 3 4 5 \u00bb Results: 309",
+    "results": 309
+  },
+  "store_item_summary_meta": {
+    "nav_text": "\u00bb Pages: 1 \u00bb Results: 9",
+    "results": 9
+  },
+  "mounts_meta": {
+    "nav_text": "\u00bb Pages: 1 \u00bb Results: 22",
+    "results": 22
+  },
+  "outfits_meta": {
+    "nav_text": "\u00bb Pages: 1 2 \u00bb Results: 37",
+    "results": 37
+  },
+  "sample_store_items": [
+    "223x supreme health potion",
+    "gold pouch",
+    "gilded imbuing shrine",
+    "shiny reward shrine",
+    "ferumbras exercise dummy",
+    "hireling lamp",
+    "volcanic mirror",
+    "volcanic table"
+  ],
+  "sample_items": [
+    "2x book",
+    "2x book",
+    "book",
+    "3x blue backpack",
+    "6x camouflage backpack",
+    "cup",
+    "copper key",
+    "bone key"
+  ],
+  "sample_mounts": [
+    "Racing Bird",
+    "War Bear",
+    "Midnight Panther",
+    "Draptor",
+    "Blazebringer",
+    "Donkey",
+    "War Horse",
+    "Tamed Panda"
+  ],
+  "sample_outfits": [
+    "Citizen (base & addon 1 & addon 2)",
+    "Hunter (base)",
+    "Mage (base & addon 1)",
+    "Knight (base & addon 1)",
+    "Nobleman (base)",
+    "Barbarian (base & addon 1 & addon 2)",
+    "Druid (base)",
+    "Oriental (base & addon 1)"
+  ],
+  "section_ids": [
+    "Achievements",
+    "BestiaryProgress",
+    "Blessings",
+    "BosstiaryProgress",
+    "BountyTalisman",
+    "Charms",
+    "CompletedCyclopediaMapAreas",
+    "CompletedQuestLines",
+    "Familiars",
+    "General",
+    "Imbuements",
+    "ItemSummary",
+    "Mounts",
+    "Outfits",
+    "Proficiencies",
+    "RevealedGems",
+    "StoreItemSummary",
+    "StoreMounts",
+    "StoreOutfits",
+    "Titles"
+  ]
+}

@@ -1,0 +1,236 @@
+{
+  "auction_id": 2228681,
+  "url": "https://www.tibia.com/charactertrade/?auctionid=2228681&page=details&subtopic=pastcharactertrades",
+  "name": "Fystic",
+  "level": 615,
+  "vocation": "Exalted Monk",
+  "sex": "Male",
+  "world": "Refugia",
+  "auction_start": "Aug\u00a012\u00a02026, 10:04\u00a0CEST",
+  "auction_end": "Aug\u00a013\u00a02026, 22:00\u00a0CEST",
+  "bid_type": "Winning Bid",
+  "bid": 6957,
+  "status": "finished",
+  "list_highlights": [
+    "1x a gold pouch (Store Item)",
+    "Animus Masteries unlocked: 146",
+    "112 Fist Fighting (Loyalty bonus not included)",
+    "Additional Slots: Prey, Weekly Tasks",
+    "47 Magic Level (Loyalty bonus not included)"
+  ],
+  "skills": [
+    {
+      "name": "Axe Fighting",
+      "level": 20,
+      "progress": 75.93
+    },
+    {
+      "name": "Club Fighting",
+      "level": 14,
+      "progress": 33.33
+    },
+    {
+      "name": "Distance Fighting",
+      "level": 13,
+      "progress": 15.84
+    },
+    {
+      "name": "Fishing",
+      "level": 10,
+      "progress": 60.0
+    },
+    {
+      "name": "Fist Fighting",
+      "level": 112,
+      "progress": 60.62
+    },
+    {
+      "name": "Magic Level",
+      "level": 47,
+      "progress": 40.7
+    },
+    {
+      "name": "Shielding",
+      "level": 70,
+      "progress": 53.23
+    },
+    {
+      "name": "Sword Fighting",
+      "level": 13,
+      "progress": 69.56
+    }
+  ],
+  "general": {
+    "stats": {
+      "hit_points": "6,255",
+      "mana": "6,160",
+      "capacity": "15,845",
+      "speed": "724",
+      "blessings": "7/7",
+      "mounts": "10",
+      "outfits": "29",
+      "titles": "18"
+    },
+    "additional": {
+      "creation_date": "Apr\u00a008\u00a02025,\u00a014:44:16\u00a0CEST",
+      "experience": "3,839,836,402",
+      "gold": "1,000",
+      "achievement_points": "231"
+    },
+    "transfer": {
+      "regular_world_transfer": "can be purchased and used after Dec\u00a007\u00a02026,\u00a009:03:59\u00a0CET"
+    },
+    "charms_meta": {
+      "charm_expansion": "yes",
+      "available_charm_points": "397",
+      "spent_charm_points": "4,240",
+      "available_minor_charm_echoes": "150",
+      "spent_minor_charm_echoes": "300"
+    },
+    "daily_rewards": {
+      "daily_reward_streak": "35"
+    },
+    "hunting": {
+      "hunting_task_points": "4,542",
+      "permanent_weekly_task_expansion": "yes",
+      "permanent_prey_slots": "1",
+      "prey_wildcards": "53"
+    },
+    "hirelings": {
+      "hirelings": "0",
+      "hireling_jobs": "0",
+      "hireling_outfits": "0"
+    },
+    "dust": {
+      "exalted_dust": "352/1,840"
+    },
+    "boss": {
+      "animus_masteries_unlocked": "129"
+    },
+    "bonus_promotion": {
+      "boss_points": "1,255"
+    }
+  },
+  "charms": [
+    {
+      "cost": 2000,
+      "type": "Major",
+      "name": "Low Blow",
+      "grade": 2
+    },
+    {
+      "cost": 240,
+      "type": "Major",
+      "name": "Poison",
+      "grade": 1
+    },
+    {
+      "cost": 2000,
+      "type": "Major",
+      "name": "Savage Blow",
+      "grade": 2
+    },
+    {
+      "cost": 100,
+      "type": "Minor",
+      "name": "Fatal Hold",
+      "grade": 1
+    },
+    {
+      "cost": 100,
+      "type": "Minor",
+      "name": "Void Inversion",
+      "grade": 1
+    },
+    {
+      "cost": 100,
+      "type": "Minor",
+      "name": "Void's Call",
+      "grade": 1
+    }
+  ],
+  "counts": {
+    "items_page1_icons": 76,
+    "store_items_page1_icons": 4,
+    "mounts_page1_icons": 10,
+    "store_mounts_page1_icons": 0,
+    "outfits_page1_icons": 29,
+    "store_outfits_page1_icons": 0,
+    "familiars_page1_icons": 1,
+    "charms": 6
+  },
+  "item_summary_meta": {
+    "nav_text": "\u00bb Pages: 1 2 3 \u00bb Results: 210",
+    "results": 210
+  },
+  "store_item_summary_meta": {
+    "nav_text": "\u00bb Pages: 1 \u00bb Results: 4",
+    "results": 4
+  },
+  "mounts_meta": {
+    "nav_text": "\u00bb Pages: 1 \u00bb Results: 10",
+    "results": 10
+  },
+  "outfits_meta": {
+    "nav_text": "\u00bb Pages: 1 \u00bb Results: 29",
+    "results": 29
+  },
+  "sample_store_items": [
+    "680x ultimate spirit potion",
+    "gold pouch",
+    "carrion casserole",
+    "podium of vigour"
+  ],
+  "sample_items": [
+    "104x great health potion",
+    "2x health potion",
+    "5x mana potion",
+    "giant shimmering pearl",
+    "book",
+    "6x book",
+    "7x blue backpack",
+    "candlestick"
+  ],
+  "sample_mounts": [
+    "Racing Bird",
+    "Draptor",
+    "Donkey",
+    "Tamed Panda",
+    "Ursagrodon",
+    "Sparkion",
+    "Haze",
+    "Giant Beaver"
+  ],
+  "sample_outfits": [
+    "Citizen (base)",
+    "Hunter (base)",
+    "Mage (base)",
+    "Knight (base)",
+    "Nobleman (base)",
+    "Summoner (base)",
+    "Warrior (base & addon 2)",
+    "Barbarian (base)"
+  ],
+  "section_ids": [
+    "Achievements",
+    "BestiaryProgress",
+    "Blessings",
+    "BosstiaryProgress",
+    "BountyTalisman",
+    "Charms",
+    "CompletedCyclopediaMapAreas",
+    "CompletedQuestLines",
+    "Familiars",
+    "General",
+    "Imbuements",
+    "ItemSummary",
+    "Mounts",
+    "Outfits",
+    "Proficiencies",
+    "RevealedGems",
+    "StoreItemSummary",
+    "StoreMounts",
+    "StoreOutfits",
+    "Titles"
+  ]
+}

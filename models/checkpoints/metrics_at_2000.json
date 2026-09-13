@@ -1,0 +1,232 @@
+{
+  "timestamp": "2026-09-12T23:58:16.735354+00:00",
+  "checkpoint_label": "enriched=2000",
+  "n_enriched_sold": 2002,
+  "n_train": 1598,
+  "n_test": 400,
+  "n_features": 94,
+  "n_total": 1998,
+  "target": "log1p(winning_bid)",
+  "split_mode": "stratified_log_bid_bins",
+  "sample_weights": "inverse_log_bid_bin_freq",
+  "lgbm_hyperparams": {
+    "n_estimators": 250,
+    "num_leaves": 31,
+    "max_depth": 6,
+    "min_child_samples": 133
+  },
+  "lightgbm": {
+    "MAE": 2888.5324583216257,
+    "MedAE": 541.909091797857,
+    "MAPE": 42.845089399919594,
+    "MdAPE": 31.04828731284336,
+    "R2_log": 0.9397906710877166,
+    "R2_price": 0.8696622734745263,
+    "n_test": 400,
+    "slices": {
+      "by_bid_quartile": [
+        {
+          "MAE": 2350.711714851094,
+          "MedAE": 1203.1094750225425,
+          "MAPE": 36.1828651827482,
+          "MdAPE": 28.62138106756585,
+          "R2_log": 0.35730706450372673,
+          "R2_price": -0.5540612286131348,
+          "n_test": 97,
+          "quartile": "Q3",
+          "bid_min": 2000.9999999999998,
+          "bid_max": 13334.000000000007,
+          "bid_median": 4500.999999999997
+        },
+        {
+          "MAE": 8790.532335411255,
+          "MedAE": 5959.667512112825,
+          "MAPE": 26.31645359346096,
+          "MdAPE": 23.68017699064126,
+          "R2_log": 0.6271903727488108,
+          "R2_price": 0.7125098873840425,
+          "n_test": 100,
+          "quartile": "Q4",
+          "bid_min": 13900.999999999995,
+          "bid_max": 134999.99999999997,
+          "bid_median": 24551.500000000004
+        },
+        {
+          "MAE": 108.92284463472407,
+          "MedAE": 71.62141119159699,
+          "MAPE": 71.57545995905764,
+          "MdAPE": 43.17274351277731,
+          "R2_log": 0.11396812032881343,
+          "R2_price": -1.0863843846932446,
+          "n_test": 100,
+          "quartile": "Q1",
+          "bid_min": 56.999999999999986,
+          "bid_max": 401.0,
+          "bid_median": 151.0
+        },
+        {
+          "MAE": 363.5769804222922,
+          "MedAE": 289.9484361979843,
+          "MAPE": 37.27287846591651,
+          "MdAPE": 29.183142162931947,
+          "R2_log": -0.13460688010010124,
+          "R2_price": -0.030511753357829186,
+          "n_test": 103,
+          "quartile": "Q2",
+          "bid_min": 417.0,
+          "bid_max": 2000.0,
+          "bid_median": 1000.9999999999999
+        }
+      ],
+      "by_vocation": []
+    }
+  },
+  "ridge": {
+    "MAE": 4929.346946126473,
+    "MedAE": 515.5622358239492,
+    "MAPE": 51.45802306280237,
+    "MdAPE": 29.92950128853996,
+    "R2_log": 0.9165254944316534,
+    "R2_price": -0.12825778609775051,
+    "n_test": 400,
+    "slices": {
+      "by_bid_quartile": [
+        {
+          "MAE": 2542.907078589099,
+          "MedAE": 1188.8455293288407,
+          "MAPE": 39.89959018177448,
+          "MdAPE": 28.88490004529701,
+          "R2_log": -0.15361782736680807,
+          "R2_price": -1.0429976737915503,
+          "n_test": 97,
+          "quartile": "Q3",
+          "bid_min": 2000.9999999999998,
+          "bid_max": 13334.000000000007,
+          "bid_median": 4500.999999999997
+        },
+        {
+          "MAE": 16775.987174808168,
+          "MedAE": 6902.433813438333,
+          "MAPE": 35.50580425960567,
+          "MdAPE": 26.479561319525402,
+          "R2_log": 0.40526852782533995,
+          "R2_price": -1.7116533634714388,
+          "n_test": 100,
+          "quartile": "Q4",
+          "bid_min": 13900.999999999995,
+          "bid_max": 134999.99999999997,
+          "bid_median": 24551.500000000004
+        },
+        {
+          "MAE": 115.70263032330551,
+          "MedAE": 90.79996760174421,
+          "MAPE": 98.47699658006638,
+          "MdAPE": 52.95831353170337,
+          "R2_log": -0.20205458934078702,
+          "R2_price": -0.905951045913808,
+          "n_test": 100,
+          "quartile": "Q1",
+          "bid_min": 56.999999999999986,
+          "bid_max": 401.0,
+          "bid_median": 151.0
+        },
+        {
+          "MAE": 348.61952732329917,
+          "MedAE": 245.17651009319275,
+          "MAPE": 32.18125139341376,
+          "MdAPE": 26.113246824462223,
+          "R2_log": -0.13958128158826177,
+          "R2_price": -0.05598216275860657,
+          "n_test": 103,
+          "quartile": "Q2",
+          "bid_min": 417.0,
+          "bid_max": 2000.0,
+          "bid_median": 1000.9999999999999
+        }
+      ],
+      "by_vocation": []
+    }
+  },
+  "top_features": [
+    {
+      "feature": "level",
+      "importance": 179
+    },
+    {
+      "feature": "max_combat_skill",
+      "importance": 179
+    },
+    {
+      "feature": "build_quality_score",
+      "importance": 118
+    },
+    {
+      "feature": "skill_magic_level",
+      "importance": 101
+    },
+    {
+      "feature": "items_count",
+      "importance": 83
+    },
+    {
+      "feature": "exalted_dust",
+      "importance": 69
+    },
+    {
+      "feature": "skill_shielding",
+      "importance": 61
+    },
+    {
+      "feature": "skill_to_level_ratio",
+      "importance": 57
+    },
+    {
+      "feature": "skill_distance_fighting",
+      "importance": 56
+    },
+    {
+      "feature": "n_quest_lines",
+      "importance": 52
+    },
+    {
+      "feature": "achievement_points",
+      "importance": 51
+    },
+    {
+      "feature": "skill_fist_fighting",
+      "importance": 49
+    },
+    {
+      "feature": "ml_to_level_ratio",
+      "importance": 48
+    },
+    {
+      "feature": "hunting_task_points",
+      "importance": 48
+    },
+    {
+      "feature": "charm_points_total",
+      "importance": 46
+    },
+    {
+      "feature": "gold",
+      "importance": 46
+    },
+    {
+      "feature": "skill_sword_fighting",
+      "importance": 45
+    },
+    {
+      "feature": "daily_reward_streak",
+      "importance": 44
+    },
+    {
+      "feature": "ml_excess_vs_level",
+      "importance": 41
+    },
+    {
+      "feature": "skill_club_fighting",
+      "importance": 40
+    }
+  ]
+}
