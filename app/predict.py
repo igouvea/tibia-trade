@@ -27,34 +27,39 @@ def parse_auction_id(text: str) -> int:
 
 
 def fetch_and_parse(auction_id: int, session: RateLimitedSession | None = None) -> dict[str, Any]:
-    """Fetch auction HTML. Prefer Chrome when available; else cloudscraper; else local cache."""
+    """Server-side auction fetch → parse. Never relies on the phone/browser."""
     import json
+    import os
     from pathlib import Path as _P
 
+    from scrape.http import fetch_auction_html
+
     errors: list[str] = []
-    url = auction_detail_url(auction_id)
 
-    # 1) Headless Chrome when installed (box enrich path)
+    # 1) Multi-strategy HTTP fetch (curl_cffi / cloudscraper / optional proxy / Chrome)
     try:
-        from scrape.chrome_fetch import CHROME, chrome_dump
-        if CHROME:
-            html = chrome_dump(url)
-            return parse_detail_html(html, auction_id=auction_id)
-    except Exception as exc:  # noqa: BLE001
-        errors.append(f"chrome: {exc}")
-
-    # 2) cloudscraper / requests session
-    try:
-        session = session or RateLimitedSession(prefer_chrome=False, min_delay=0.5, max_delay=1.2)
-        html = session.get(url)
+        html, source = fetch_auction_html(int(auction_id), timeout=25)
         parsed = parse_detail_html(html, auction_id=auction_id)
         if parsed.get("name") or parsed.get("level"):
+            parsed["_fetch_source"] = source
             return parsed
-        errors.append("session: parsed empty character block (Cloudflare?)")
+        errors.append(f"{source}: parsed empty character block")
     except Exception as exc:  # noqa: BLE001
-        errors.append(f"session: {exc}")
+        errors.append(f"live: {exc}")
 
-    # 3) Local enriched cache (offline / blocked networks)
+    # 2) Legacy session path (local enrich / non-Vercel)
+    if session is not None and not os.environ.get("VERCEL"):
+        try:
+            html = session.get(auction_detail_url(auction_id))
+            parsed = parse_detail_html(html, auction_id=auction_id)
+            if parsed.get("name") or parsed.get("level"):
+                parsed["_fetch_source"] = "session"
+                return parsed
+            errors.append("session: empty parse")
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"session: {exc}")
+
+    # 3) Local enriched cache (sold auctions already scraped on the enrich machine)
     cache = _P(__file__).resolve().parents[1] / "data" / "detail_auctions.jsonl"
     if cache.exists():
         with cache.open(encoding="utf-8") as f:
@@ -64,14 +69,20 @@ def fetch_and_parse(auction_id: int, session: RateLimitedSession | None = None) 
                 row = json.loads(line)
                 if int(row.get("auction_id") or 0) == int(auction_id):
                     row.setdefault("detail_ok", True)
+                    row["_fetch_source"] = "cache"
                     return row
         errors.append(f"cache: auction {auction_id} not in detail_auctions.jsonl")
     else:
         errors.append("cache: detail_auctions.jsonl missing")
 
+    where = "Vercel server" if os.environ.get("VERCEL") else "app server"
     raise RuntimeError(
-        "Could not load auction details (" + "; ".join(errors[:3]) + "). "
-        "On this Mac, live Tibia fetch may be blocked — sync enriched data from the scrape machine, or retry."
+        "Could not load auction details on the "
+        + where
+        + " ("
+        + "; ".join(errors[:4])
+        + "). "
+        "Live Tibia pages are fetched server-side; if Cloudflare blocks the host, set TIBIA_FETCH_PROXY or retry."
     )
 
 
