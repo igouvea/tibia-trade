@@ -7,7 +7,11 @@ from typing import Any
 
 import pandas as pd
 
-from features.build import CORR_DROP_COLUMNS, FEATURE_COLUMNS, VOCATION_BASE
+try:
+    from features.build import CORR_DROP_COLUMNS, FEATURE_COLUMNS, VOCATION_BASE
+except ImportError:  # older deploys / partial sync
+    from features.build import FEATURE_COLUMNS, VOCATION_BASE
+    CORR_DROP_COLUMNS = []
 from features.high_value import HV_FEATURE_COLUMNS, extract_high_value_features
 from model.infer import load_bundle, predict_row
 from scrape.detail_parser import parse_detail_html

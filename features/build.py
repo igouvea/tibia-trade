@@ -133,6 +133,30 @@ BUILD_QUALITY_COLUMNS = [
 FEATURE_COLUMNS = FEATURE_COLUMNS + list(BUILD_QUALITY_COLUMNS)
 
 
+# Correlation-redundant features dropped at prepare_xy time (training + must match
+# inference via model bundle feature_columns). See models/feature_correlation_report.md.
+CORR_DROP_COLUMNS = [
+    # |r|≈1 / algebraic duplicates
+    "liquidity_haircut",           # == has_golden_outfit
+    "has_golden_outfit_display",   # ≈ has_golden_outfit (r≈0.94)
+    "max_combat_skill",            # ≈ primary_combat_skill (r≈1.0); keep denser vocation-aware primary
+    "paladin_distance",            # ≈ skill_distance_fighting × Paladin (r≈0.99)
+    "knight_melee",                # ≈ melee × Knight / voc_Knight (r≈0.99)
+    "build_quality_score",         # ≈ skill_to_level_ratio (r≈0.99)
+    "mage_ml",                     # ≈ skill_magic_level × mage (r≈0.97)
+    "mage_ml_to_level",            # same-family with ml_to_level_ratio (r≈0.89)
+    "ml_excess_vs_level",          # algebraic: ML − 0.15×level (perfect multi-collinearity)
+    "n_high_value_hits",           # ≈ high_value_asset_score (r≈0.96); keep weighted score
+    # Charm family: keep charm_points_total (+ n_minor_charms composition)
+    "n_charms",                    # ≈ charm_points_total / n_major_charms
+    "n_major_charms",              # |r|≈0.91 with charm_points_total (same family)
+    # Progression / cosmetics cluster: keep n_quest_lines as densest survivor
+    "achievement_points",          # |r|≈0.94–0.96 with outfits/quests
+    "outfits_count",               # |r|≈0.95 with n_quest_lines
+    "mounts_count",                # same-family with quests/outfits (|r|≈0.86–0.91)
+]
+
+
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -380,7 +404,8 @@ def prepare_xy(
 
     top_worlds = train["world"].value_counts().head(25).index.tolist()
     train["world_top"] = train["world"].where(train["world"].isin(top_worlds), "OTHER")
-    X = train.reindex(columns=FEATURE_COLUMNS).copy()
+    use_cols = [c for c in FEATURE_COLUMNS if c not in set(CORR_DROP_COLUMNS)]
+    X = train.reindex(columns=use_cols).copy()
     for c in X.columns:
         if X[c].dtype == bool or str(X[c].dtype) == "boolean":
             X[c] = X[c].astype(float)
