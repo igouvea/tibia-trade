@@ -755,6 +755,16 @@
     .confidence.high { color: var(--good); background: rgba(125,186,138,0.12); }
     .confidence.med { color: var(--accent); background: rgba(201,162,39,0.12); }
     .confidence.low { color: var(--bad); background: rgba(201,122,109,0.12); }
+    .band-chart {
+      margin: 0.85rem 0 0.35rem;
+      min-height: 120px;
+      width: 100%;
+    }
+    .band-chart-caption {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin: 0 0 0.25rem;
+    }
     details.more-charts {
       margin: 0.5rem 0 1rem;
       border: 1px solid var(--border);
@@ -1007,6 +1017,8 @@
             <div class="price" id="pred-price"></div>
             <div id="pred-confidence" class="confidence med hidden">—</div>
             <div id="pred-verdict" class="verdict muted hidden">—</div>
+            <p class="band-chart-caption">Fair band vs sold / ask</p>
+            <div id="chart-pred-band" class="band-chart"></div>
             <div class="muted" id="pred-gold" style="margin-top:0.25rem;font-size:0.85rem"></div>
             <div class="range" id="pred-range"></div>
             <div id="pred-highlights" style="margin-top:0.75rem"></div>
@@ -1239,6 +1251,105 @@
       raf = requestAnimationFrame(tick);
     })();
 
+    
+    function plotAppraisalBand(p, d) {
+      const el = document.getElementById('chart-pred-band');
+      if (!el || typeof Plotly === 'undefined') return;
+      const fair = Number(p.fair_price) || 0;
+      const lo = Number(p.fair_price_low);
+      const hi = Number(p.fair_price_high);
+      if (!(fair > 0) || !Number.isFinite(lo) || !Number.isFinite(hi) || hi < lo) {
+        el.innerHTML = '';
+        return;
+      }
+      let ref = null, refName = null;
+      if (d && d.is_sold && d.winning_bid != null) { ref = Number(d.winning_bid); refName = 'Sold'; }
+      else if (d && (d.minimum_bid != null || d.listed_bid != null)) {
+        ref = Number(d.minimum_bid != null ? d.minimum_bid : d.listed_bid);
+        refName = d.is_live_unsold ? 'Ask' : 'Listed';
+      }
+      const ridge = p.ridge_price != null ? Number(p.ridge_price) : null;
+      const xs = [lo, hi];
+      if (ref != null && Number.isFinite(ref)) xs.push(ref);
+      if (ridge != null && Number.isFinite(ridge)) xs.push(ridge);
+      xs.push(fair);
+      const pad = Math.max((Math.max(...xs) - Math.min(...xs)) * 0.08, fair * 0.05, 50);
+      const xmin = Math.max(0, Math.min(...xs) - pad);
+      const xmax = Math.max(...xs) + pad;
+
+      const traces = [
+        {
+          type: 'scatter',
+          mode: 'lines',
+          x: [lo, hi],
+          y: [1, 1],
+          line: { color: 'rgba(201,162,39,0.55)', width: 18 },
+          hovertemplate: 'Fair band %{x:,.0f} TC<extra></extra>',
+          name: 'Fair band',
+          showlegend: true,
+        },
+        {
+          type: 'scatter',
+          mode: 'markers+text',
+          x: [fair],
+          y: [1],
+          marker: { size: 14, color: '#7dba8a', symbol: 'diamond', line: { color: '#efe6d6', width: 1 } },
+          text: ['Fair'],
+          textposition: 'top center',
+          textfont: { size: 11, color: '#efe6d6' },
+          name: 'Fair',
+          hovertemplate: 'Fair %{x:,.0f} TC<extra></extra>',
+        },
+      ];
+      if (ref != null && Number.isFinite(ref)) {
+        traces.push({
+          type: 'scatter',
+          mode: 'markers+text',
+          x: [ref],
+          y: [1],
+          marker: { size: 13, color: '#c97a6d', symbol: 'circle', line: { color: '#efe6d6', width: 1 } },
+          text: [refName],
+          textposition: 'bottom center',
+          textfont: { size: 11, color: '#efe6d6' },
+          name: refName,
+          hovertemplate: refName + ' %{x:,.0f} TC<extra></extra>',
+        });
+      }
+      if (ridge != null && Number.isFinite(ridge) && Math.abs(ridge - fair) > 1) {
+        traces.push({
+          type: 'scatter',
+          mode: 'markers+text',
+          x: [ridge],
+          y: [1],
+          marker: { size: 11, color: '#8faf9a', symbol: 'triangle-up', line: { color: '#efe6d6', width: 1 } },
+          text: ['Ridge'],
+          textposition: 'top center',
+          textfont: { size: 10, color: '#b5a690' },
+          name: 'Ridge',
+          hovertemplate: 'Ridge %{x:,.0f} TC<extra></extra>',
+        });
+      }
+      Plotly.newPlot(el, traces, {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#efe6d6', size: 11 },
+        margin: { t: 28, r: 16, b: 36, l: 16 },
+        height: 130,
+        autosize: true,
+        xaxis: {
+          range: [xmin, xmax],
+          title: 'TC',
+          zeroline: false,
+          gridcolor: 'rgba(255,255,255,0.06)',
+          tickformat: '~s',
+        },
+        yaxis: { visible: false, range: [0.4, 1.6], fixedrange: true },
+        legend: { orientation: 'h', y: 1.25, x: 0, font: { size: 10 } },
+        showlegend: true,
+      }, { responsive: true, displayModeBar: false });
+      requestAnimationFrame(() => { try { Plotly.Plots.resize(el); } catch (e) {} });
+    }
+
     async function loadOverview() {
       const res = await fetch('/api/overview');
       const data = await res.json();
@@ -1422,6 +1533,8 @@
       const err = document.getElementById('pred-error');
       const box = document.getElementById('pred-result');
       const verdict = document.getElementById('pred-verdict');
+      const bandEl = document.getElementById('chart-pred-band');
+      if (bandEl) { try { Plotly.purge(bandEl); } catch (e) { bandEl.innerHTML = ''; } }
       err.classList.add('hidden'); box.classList.add('hidden');
       if (verdict) { verdict.classList.add('hidden'); verdict.textContent = '—'; }
       const confEl0 = document.getElementById('pred-confidence');
@@ -1542,6 +1655,7 @@
             ') — estimate only, auction unsold';
         }
         document.getElementById('pred-range').textContent = rangeTxt;
+        plotAppraisalBand(p, d);
         document.getElementById('pred-highlights').innerHTML =
           (d.highlights || []).slice(0, 8).map(h => `<span class="chip">${h}</span>`).join('');
         document.getElementById('pred-drivers').innerHTML =
