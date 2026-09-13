@@ -937,13 +937,13 @@
       <div class="grid grid-3 panel" id="overview-stats"></div>
       <div class="grid grid-2">
         <div class="panel chart-panel story-card">
-          <h3>By vocation</h3>
-          <p class="ink-sm">Which paths have been clearing, and at what median purse.</p>
+          <h3>By vocation × level</h3>
+          <p class="ink-sm">Sales stacked by level band; hover a segment for that band’s median purse.</p>
           <div id="chart-voc" class="chart-box"></div>
         </div>
         <div class="panel chart-panel story-card">
           <h3>By level band</h3>
-          <p class="ink-sm">How depth of experience has priced of late.</p>
+          <p class="ink-sm">Same five bands: 0–199, 200–499, 500–899, 900–1299, ≥1300.</p>
           <div id="chart-level" class="chart-box"></div>
         </div>
       </div>
@@ -1254,17 +1254,42 @@
         <div class="stat"><div class="label">True sales (Winning Bid)</div><div class="value">${fmt(data.n_trainable)}</div></div>
         <div class="stat"><div class="label">Signals we weigh</div><div class="value">${fmt(m.n_features)}</div></div>`;
 
-      Plotly.newPlot('chart-voc', [{
+      const vocLv = data.by_vocation_level || {};
+      const vocs = vocLv.vocations || [];
+      const bucketColors = {
+        '0-199': '#6b8f71',
+        '200-499': '#8faf9a',
+        '500-899': '#c9a227',
+        '900-1299': '#c97a6d',
+        '>=1300': '#a8554a',
+      };
+      const vocTraces = (vocLv.series || []).map(s => {
+        const counts = s.count || [];
+        const medians = s.median || [];
+        return {
+          type: 'bar',
+          name: s.level_bucket,
+          x: vocs,
+          y: counts,
+          customdata: medians.map(m => (m == null ? null : Math.round(m))),
+          hovertemplate:
+            '%{x}<br>' + s.level_bucket +
+            '<br>n=%{y}<br>median %{customdata} TC<extra></extra>',
+          marker: { color: bucketColors[s.level_bucket] || '#b5a690' },
+        };
+      });
+      Plotly.newPlot('chart-voc', vocTraces.length ? vocTraces : [{
         type: 'bar',
         x: (data.by_vocation || []).map(r => r.vocation),
-        y: (data.by_vocation || []).map(r => r.median),
+        y: (data.by_vocation || []).map(r => r.count),
         marker: { color: '#c9a227' },
-        hovertext: (data.by_vocation || []).map(r => `n=${r.count}`),
       }], {
-        title: 'Median purse by vocation',
+        title: 'Sales by vocation, stacked by level',
+        barmode: 'stack',
         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: '#efe6d6' }, margin: { t: 40, r: 20, b: 40, l: 50 },
-        yaxis: { title: 'TC' }
+        yaxis: { title: 'Sold characters (n)' },
+        legend: { orientation: 'h', y: 1.14, x: 0 },
       }, {responsive: true, displayModeBar: false});
 
       Plotly.newPlot('chart-level', [{

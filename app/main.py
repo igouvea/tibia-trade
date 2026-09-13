@@ -130,8 +130,81 @@ def api_overview():
     else:
         train = df.copy()
 
+    LEVEL_BUCKETS = [
+        (0, 200, "0-199"),
+        (200, 500, "200-499"),
+        (500, 900, "500-899"),
+        (900, 1300, "900-1299"),
+        (1300, None, ">=1300"),
+    ]
+    LEVEL_BUCKET_LABELS = [lab for _, _, lab in LEVEL_BUCKETS]
+
+    def level_bucket(level: float) -> str | None:
+        try:
+            lv = float(level)
+        except (TypeError, ValueError):
+            return None
+        if lv != lv:  # NaN
+            return None
+        for lo, hi, lab in LEVEL_BUCKETS:
+            if hi is None:
+                if lv >= lo:
+                    return lab
+            elif lo <= lv < hi:
+                return lab
+        return None
+
     by_voc = []
-    if "vocation_base" in train.columns and "winning_bid" in train.columns:
+    by_vocation_level: dict = {
+        "vocations": [],
+        "level_buckets": LEVEL_BUCKET_LABELS,
+        "series": [],
+    }
+    if (
+        "vocation_base" in train.columns
+        and "winning_bid" in train.columns
+        and "level" in train.columns
+    ):
+        tmp = train.dropna(subset=["winning_bid", "level"]).copy()
+        tmp["level_bucket"] = tmp["level"].map(level_bucket)
+        tmp = tmp.dropna(subset=["level_bucket"])
+        # Legacy flat vocation medians (still useful for other UI)
+        g = (
+            tmp.groupby("vocation_base", dropna=False)["winning_bid"]
+            .agg(["count", "median", "mean"])
+            .reset_index()
+            .rename(columns={"vocation_base": "vocation"})
+        )
+        by_voc = g.replace({np.nan: None}).to_dict(orient="records")
+
+        tmp["vocation_base"] = (
+            tmp["vocation_base"].fillna("Unknown").astype(str).replace({"nan": "Unknown", "None": "Unknown"})
+        )
+        cells = (
+            tmp.groupby(["vocation_base", "level_bucket"], dropna=False)["winning_bid"]
+            .agg(["count", "median", "mean"])
+            .reset_index()
+        )
+        vocs = sorted(cells["vocation_base"].astype(str).unique().tolist())
+        by_vocation_level["vocations"] = vocs
+        series = []
+        for lab in LEVEL_BUCKET_LABELS:
+            sub = cells[cells["level_bucket"] == lab]
+            by_v = {str(r.vocation_base): r for r in sub.itertuples(index=False)}
+            series.append(
+                {
+                    "level_bucket": lab,
+                    "count": [int(by_v[v].count) if v in by_v else 0 for v in vocs],
+                    "median": [
+                        float(by_v[v].median) if v in by_v else None for v in vocs
+                    ],
+                    "mean": [
+                        float(by_v[v].mean) if v in by_v else None for v in vocs
+                    ],
+                }
+            )
+        by_vocation_level["series"] = series
+    elif "vocation_base" in train.columns and "winning_bid" in train.columns:
         g = (
             train.dropna(subset=["winning_bid"])
             .groupby("vocation_base", dropna=False)["winning_bid"]
@@ -145,10 +218,11 @@ def api_overview():
     if "level" in train.columns and "winning_bid" in train.columns:
         tmp = train.dropna(subset=["level", "winning_bid"]).copy()
         if not tmp.empty:
-            tmp["level_bin"] = pd.cut(
-                tmp["level"],
-                bins=[0, 100, 200, 300, 400, 500, 600, 800, 1000, 5000],
-                right=False,
+            tmp["level_bin"] = tmp["level"].map(level_bucket)
+            tmp = tmp.dropna(subset=["level_bin"])
+            # Preserve bucket order
+            tmp["level_bin"] = pd.Categorical(
+                tmp["level_bin"], categories=LEVEL_BUCKET_LABELS, ordered=True
             )
             bl = (
                 tmp.groupby("level_bin", observed=False)["winning_bid"]
@@ -174,6 +248,7 @@ def api_overview():
         "n_rows": int(len(df)),
         "n_trainable": int(train.shape[0]),
         "by_vocation": by_voc,
+        "by_vocation_level": by_vocation_level,
         "by_level": by_level,
         "feature_importance": importance,
         "metrics": get_metrics(),
