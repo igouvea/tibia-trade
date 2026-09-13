@@ -305,6 +305,34 @@ def train_models(
     champion = leaderboard[0]["model"]
     log.info("Champion: %s (MAE=%.1f)", champion, leaderboard[0]["MAE"])
 
+    # 95% prediction interval from holdout log-residuals of the champion
+    resid_log = y_test_np - preds[champion]
+    log_q025 = float(np.quantile(resid_log, 0.025))
+    log_q975 = float(np.quantile(resid_log, 0.975))
+    # Multiplicative factors on price scale around point estimate
+    yt = np.expm1(y_test_np)
+    yp = np.clip(np.expm1(preds[champion]), 1e-9, None)
+    ratio = yt / yp
+    ratio_q025 = float(np.quantile(ratio, 0.025))
+    ratio_q975 = float(np.quantile(ratio, 0.975))
+    prediction_interval = {
+        "level": 0.95,
+        "method": "holdout_log_residual_quantile",
+        "log_q025": log_q025,
+        "log_q975": log_q975,
+        "ratio_q025": ratio_q025,
+        "ratio_q975": ratio_q975,
+        "n_holdout": int(len(resid_log)),
+        "note": "ci95 = expm1(pred_log + log_q); fair band remains a tighter trading heuristic",
+    }
+    log.info(
+        "95%% CI log residuals q025=%.3f q975=%.3f | ratio q025=%.3f q975=%.3f",
+        log_q025,
+        log_q975,
+        ratio_q025,
+        ratio_q975,
+    )
+
     # Feature importance from champion when available
     champ_model = fitted[champion]
     importance = pd.DataFrame({"feature": list(X.columns), "importance": 0.0})
@@ -336,6 +364,7 @@ def train_models(
         "models": fitted,
         "champion": champion,
         "leaderboard": leaderboard,
+        "prediction_interval": prediction_interval,
         # Backward-compatible aliases
         "lgbm": fitted.get("lightgbm"),
         "ridge": fitted.get("ridge"),
@@ -361,6 +390,7 @@ def train_models(
         "models": {slim_name: fitted[slim_name]},
         "champion": slim_name,
         "leaderboard": [r for r in leaderboard if r["model"] == slim_name],
+        "prediction_interval": prediction_interval,
         "lgbm": None,
         "ridge": fitted.get("ridge") or fitted[slim_name],
         "feature_columns": list(X.columns),
@@ -411,6 +441,7 @@ def train_models(
 
     # Primary "live" metrics = champion
     metrics["champion_metrics"] = per_model[champion]
+    metrics["prediction_interval"] = prediction_interval
     (models_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
     return metrics
 

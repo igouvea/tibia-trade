@@ -1017,7 +1017,7 @@
             <div class="price" id="pred-price"></div>
             <div id="pred-confidence" class="confidence med hidden">—</div>
             <div id="pred-verdict" class="verdict muted hidden">—</div>
-            <p class="band-chart-caption">Fair band vs sold / ask</p>
+            <p class="band-chart-caption">Fair band (gold) inside 95% CI (blue) · vs sold / ask</p>
             <div id="chart-pred-band" class="band-chart"></div>
             <div class="muted" id="pred-gold" style="margin-top:0.25rem;font-size:0.85rem"></div>
             <div class="range" id="pred-range"></div>
@@ -1258,10 +1258,12 @@
       const fair = Number(p.fair_price) || 0;
       const lo = Number(p.fair_price_low);
       const hi = Number(p.fair_price_high);
-      if (!(fair > 0) || !Number.isFinite(lo) || !Number.isFinite(hi) || hi < lo) {
-        el.innerHTML = '';
-        return;
-      }
+      const ciLo = Number(p.ci95_low);
+      const ciHi = Number(p.ci95_high);
+      const hasFair = fair > 0 && Number.isFinite(lo) && Number.isFinite(hi) && hi >= lo;
+      const hasCI = fair > 0 && Number.isFinite(ciLo) && Number.isFinite(ciHi) && ciHi >= ciLo;
+      if (!hasFair && !hasCI) { el.innerHTML = ''; return; }
+
       let ref = null, refName = null;
       if (d && d.is_sold && d.winning_bid != null) { ref = Number(d.winning_bid); refName = 'Sold'; }
       else if (d && (d.minimum_bid != null || d.listed_bid != null)) {
@@ -1269,82 +1271,68 @@
         refName = d.is_live_unsold ? 'Ask' : 'Listed';
       }
       const ridge = p.ridge_price != null ? Number(p.ridge_price) : null;
-      const xs = [lo, hi];
+
+      const xs = [];
+      if (hasFair) xs.push(lo, hi);
+      if (hasCI) xs.push(ciLo, ciHi);
+      xs.push(fair);
       if (ref != null && Number.isFinite(ref)) xs.push(ref);
       if (ridge != null && Number.isFinite(ridge)) xs.push(ridge);
-      xs.push(fair);
       const pad = Math.max((Math.max(...xs) - Math.min(...xs)) * 0.08, fair * 0.05, 50);
       const xmin = Math.max(0, Math.min(...xs) - pad);
       const xmax = Math.max(...xs) + pad;
 
-      const traces = [
-        {
-          type: 'scatter',
-          mode: 'lines',
-          x: [lo, hi],
-          y: [1, 1],
-          line: { color: 'rgba(201,162,39,0.55)', width: 18 },
+      const traces = [];
+      if (hasCI) {
+        traces.push({
+          type: 'scatter', mode: 'lines', x: [ciLo, ciHi], y: [1, 1],
+          line: { color: 'rgba(107,154,196,0.45)', width: 26 },
+          hovertemplate: '95% CI %{x:,.0f} TC<extra></extra>',
+          name: '95% CI', showlegend: true,
+        });
+      }
+      if (hasFair) {
+        traces.push({
+          type: 'scatter', mode: 'lines', x: [lo, hi], y: [1, 1],
+          line: { color: 'rgba(201,162,39,0.75)', width: 14 },
           hovertemplate: 'Fair band %{x:,.0f} TC<extra></extra>',
-          name: 'Fair band',
-          showlegend: true,
-        },
-        {
-          type: 'scatter',
-          mode: 'markers+text',
-          x: [fair],
-          y: [1],
-          marker: { size: 14, color: '#7dba8a', symbol: 'diamond', line: { color: '#efe6d6', width: 1 } },
-          text: ['Fair'],
-          textposition: 'top center',
-          textfont: { size: 11, color: '#efe6d6' },
-          name: 'Fair',
-          hovertemplate: 'Fair %{x:,.0f} TC<extra></extra>',
-        },
-      ];
+          name: 'Fair band', showlegend: true,
+        });
+      }
+      traces.push({
+        type: 'scatter', mode: 'markers+text', x: [fair], y: [1],
+        marker: { size: 14, color: '#7dba8a', symbol: 'diamond', line: { color: '#efe6d6', width: 1 } },
+        text: ['Fair'], textposition: 'top center',
+        textfont: { size: 11, color: '#efe6d6' }, name: 'Fair',
+        hovertemplate: 'Fair %{x:,.0f} TC<extra></extra>',
+      });
       if (ref != null && Number.isFinite(ref)) {
         traces.push({
-          type: 'scatter',
-          mode: 'markers+text',
-          x: [ref],
-          y: [1],
+          type: 'scatter', mode: 'markers+text', x: [ref], y: [1],
           marker: { size: 13, color: '#c97a6d', symbol: 'circle', line: { color: '#efe6d6', width: 1 } },
-          text: [refName],
-          textposition: 'bottom center',
-          textfont: { size: 11, color: '#efe6d6' },
-          name: refName,
+          text: [refName], textposition: 'bottom center',
+          textfont: { size: 11, color: '#efe6d6' }, name: refName,
           hovertemplate: refName + ' %{x:,.0f} TC<extra></extra>',
         });
       }
       if (ridge != null && Number.isFinite(ridge) && Math.abs(ridge - fair) > 1) {
         traces.push({
-          type: 'scatter',
-          mode: 'markers+text',
-          x: [ridge],
-          y: [1],
+          type: 'scatter', mode: 'markers+text', x: [ridge], y: [1],
           marker: { size: 11, color: '#8faf9a', symbol: 'triangle-up', line: { color: '#efe6d6', width: 1 } },
-          text: ['Ridge'],
-          textposition: 'top center',
-          textfont: { size: 10, color: '#b5a690' },
-          name: 'Ridge',
+          text: ['Ridge'], textposition: 'top center',
+          textfont: { size: 10, color: '#b5a690' }, name: 'Ridge',
           hovertemplate: 'Ridge %{x:,.0f} TC<extra></extra>',
         });
       }
       Plotly.newPlot(el, traces, {
-        paper_bgcolor: 'rgba(0,0,0,0)',
-        plot_bgcolor: 'rgba(0,0,0,0)',
+        paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: '#efe6d6', size: 11 },
         margin: { t: 28, r: 16, b: 36, l: 16 },
-        height: 130,
-        autosize: true,
-        xaxis: {
-          range: [xmin, xmax],
-          title: 'TC',
-          zeroline: false,
-          gridcolor: 'rgba(255,255,255,0.06)',
-          tickformat: '~s',
-        },
-        yaxis: { visible: false, range: [0.4, 1.6], fixedrange: true },
-        legend: { orientation: 'h', y: 1.25, x: 0, font: { size: 10 } },
+        height: 140, autosize: true,
+        xaxis: { range: [xmin, xmax], title: 'TC', zeroline: false,
+          gridcolor: 'rgba(255,255,255,0.06)', tickformat: '~s' },
+        yaxis: { visible: false, range: [0.35, 1.65], fixedrange: true },
+        legend: { orientation: 'h', y: 1.28, x: 0, font: { size: 10 } },
         showlegend: true,
       }, { responsive: true, displayModeBar: false });
       requestAnimationFrame(() => { try { Plotly.Plots.resize(el); } catch (e) {} });
@@ -1643,8 +1631,11 @@
           goldNote.textContent = `≈ ${fmt(Math.round(goldEq))} gold at ${fmt(gptc)} gold/TC (display only — bazaar price is willingness-to-pay, not gold parity)`;
         }
         let rangeTxt =
-          `Suggested fair range ${fmt(Math.round(p.fair_price_low))} – ${fmt(Math.round(p.fair_price_high))} TC` +
-          (p.ridge_price != null ? ` · Ridge baseline ${fmt(Math.round(p.ridge_price))} TC` : '');
+          `Suggested fair range ${fmt(Math.round(p.fair_price_low))} – ${fmt(Math.round(p.fair_price_high))} TC`;
+        if (p.ci95_low != null && p.ci95_high != null) {
+          rangeTxt += ` · 95% CI ${fmt(Math.round(p.ci95_low))} – ${fmt(Math.round(p.ci95_high))} TC`;
+        }
+        rangeTxt += (p.ridge_price != null ? ` · Ridge baseline ${fmt(Math.round(p.ridge_price))} TC` : '');
         if ((d.bid_type === 'Minimum Bid' || d.is_live_unsold) && (d.minimum_bid != null || d.listed_bid != null)) {
           const ask = d.minimum_bid != null ? d.minimum_bid : d.listed_bid;
           const fair = p.fair_price || 0;

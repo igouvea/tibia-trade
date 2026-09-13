@@ -64,6 +64,41 @@ def _drivers_for(model: Any, cols: list[str], x: pd.DataFrame) -> list[dict[str,
     return drivers
 
 
+def _interval_bounds(bundle: dict[str, Any], pred_log: float, point: float) -> dict[str, Any]:
+    """Trading fair band (heuristic) + calibrated 95% CI from holdout residuals."""
+    # Suggested fair trading band (tighter, heuristic)
+    fair_low = point * 0.75
+    fair_high = point * 1.35
+
+    pi = bundle.get("prediction_interval") or {}
+    method = pi.get("method") or "fallback_ratio_from_mape"
+    if pi.get("log_q025") is not None and pi.get("log_q975") is not None:
+        ci_low = float(np.clip(np.expm1(pred_log + float(pi["log_q025"])), 0, None))
+        ci_high = float(np.clip(np.expm1(pred_log + float(pi["log_q975"])), 0, None))
+        if ci_low > ci_high:
+            ci_low, ci_high = ci_high, ci_low
+        method = pi.get("method") or method
+    elif pi.get("ratio_q025") is not None and pi.get("ratio_q975") is not None:
+        ci_low = float(max(0.0, point * float(pi["ratio_q025"])))
+        ci_high = float(max(ci_low, point * float(pi["ratio_q975"])))
+    else:
+        # Conservative fallback until the next retrain writes residual quantiles
+        ci_low = point * 0.45
+        ci_high = point * 2.20
+        method = "fallback_wide_heuristic"
+
+    # Ensure CI covers the fair band endpoints when residuals are narrow (rare)
+    # — do NOT force this; fair band can sit inside CI (usual) or be tighter by design.
+    return {
+        "fair_price_low": fair_low,
+        "fair_price_high": fair_high,
+        "ci95_low": ci_low,
+        "ci95_high": ci_high,
+        "ci95_level": float(pi.get("level") or 0.95),
+        "ci95_method": method,
+    }
+
+
 def predict_row(bundle: dict[str, Any], feature_row: dict[str, float]) -> dict[str, Any]:
     cols = bundle["feature_columns"]
     x = pd.DataFrame([{c: float(feature_row.get(c, 0.0) or 0.0) for c in cols}])
@@ -82,13 +117,16 @@ def predict_row(bundle: dict[str, Any], feature_row: dict[str, float]) -> dict[s
             ridge_price = None
 
     point = float(np.expm1(pred_log))
-    low = point * 0.75
-    high = point * 1.35
+    bounds = _interval_bounds(bundle, pred_log, point)
     GOLD_PER_TC = 41_000
     return {
         "fair_price": point,
-        "fair_price_low": low,
-        "fair_price_high": high,
+        "fair_price_low": bounds["fair_price_low"],
+        "fair_price_high": bounds["fair_price_high"],
+        "ci95_low": bounds["ci95_low"],
+        "ci95_high": bounds["ci95_high"],
+        "ci95_level": bounds["ci95_level"],
+        "ci95_method": bounds["ci95_method"],
         "ridge_price": ridge_price,
         "baseline_zero_features_price": baseline,
         "drivers": drivers,
@@ -98,6 +136,8 @@ def predict_row(bundle: dict[str, Any], feature_row: dict[str, float]) -> dict[s
         "leaderboard": bundle.get("leaderboard") or [],
         "gold_per_tc": GOLD_PER_TC,
         "fair_price_gold_equiv": point * GOLD_PER_TC,
-        "fair_price_low_gold_equiv": low * GOLD_PER_TC,
-        "fair_price_high_gold_equiv": high * GOLD_PER_TC,
+        "fair_price_low_gold_equiv": bounds["fair_price_low"] * GOLD_PER_TC,
+        "fair_price_high_gold_equiv": bounds["fair_price_high"] * GOLD_PER_TC,
+        "ci95_low_gold_equiv": bounds["ci95_low"] * GOLD_PER_TC,
+        "ci95_high_gold_equiv": bounds["ci95_high"] * GOLD_PER_TC,
     }

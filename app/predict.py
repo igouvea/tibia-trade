@@ -7,7 +7,7 @@ from typing import Any
 
 import pandas as pd
 
-from features.build import FEATURE_COLUMNS, VOCATION_BASE
+from features.build import CORR_DROP_COLUMNS, FEATURE_COLUMNS, VOCATION_BASE
 from features.high_value import HV_FEATURE_COLUMNS, extract_high_value_features
 from model.infer import load_bundle, predict_row
 from scrape.detail_parser import parse_detail_html
@@ -322,7 +322,7 @@ def run_inference(
         "Features include named high-value assets (e.g. Golden Outfit, gold pouch, exercise dummy, falcon/cobra gear) when visible on the first detail page.",
         "First-page item/outfit icons miss later AJAX pages — rare gear on page 2+ may be undercounted.",
         "Thin markets and world-specific demand can move prices far from the estimate.",
-        "Fair-price band is a heuristic (±~25–35%), not a calibrated confidence interval.",
+        "Suggested fair band is a trading heuristic (±~25–35%). 95% CI is calibrated from holdout log-residuals of the living champion (wide when the market is noisy — that is intentional).",
         "Gold equivalent uses 1 TC ≈ 41,000 gold for display only — bazaar clearing is willingness-to-pay / liquidity, not gold parity.",
     ]
     if bid_type == "Minimum Bid":
@@ -380,7 +380,7 @@ def run_inference(
             "url": auction_detail_url(aid),
         },
         "prediction": pred,
-        "features_used": {k: feats.get(k) for k in FEATURE_COLUMNS},
+        "features_used": {k: feats.get(k) for k in FEATURE_COLUMNS if k not in set(CORR_DROP_COLUMNS)},
         "comps": comps,
         "caveats": caveats,
     }
