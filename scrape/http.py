@@ -154,17 +154,22 @@ def fetch_auction_html(auction_id: int, timeout: int = 25) -> tuple[str, str]:
     proxy = (os.environ.get("TIBIA_FETCH_PROXY") or "").rstrip("/")
     if proxy:
         import json as _json
-        import urllib.error
+        import urllib.parse
         import urllib.request
 
+        token = os.environ.get("TIBIA_FETCH_PROXY_TOKEN")
+        # Prefer auction_id (avoids mangling & in tibia URLs); fall back to encoded url=
+        attempts = [(f"{proxy}/fetch?auction_id={int(auction_id)}", "auction_id")]
         for url in urls:
+            q = urllib.parse.urlencode({"url": url})
+            attempts.append((f"{proxy}/fetch?{q}", "url"))
+        for endpoint, kind in attempts:
             try:
                 req = urllib.request.Request(
-                    f"{proxy}/fetch?url={url}",
+                    endpoint,
                     headers={"User-Agent": DEFAULT_UA, "Accept": "text/html"},
                     method="GET",
                 )
-                token = os.environ.get("TIBIA_FETCH_PROXY_TOKEN")
                 if token:
                     req.add_header("Authorization", f"Bearer {token}")
                 with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -176,10 +181,10 @@ def fetch_auction_html(auction_id: int, timeout: int = 25) -> tuple[str, str]:
                 else:
                     html = body
                 if html and not _looks_blocked(html):
-                    return html, "proxy"
-                errors.append("proxy: empty or blocked")
+                    return html, f"proxy:{kind}"
+                errors.append(f"proxy:{kind}: empty or blocked")
             except Exception as exc:  # noqa: BLE001
-                errors.append(f"proxy: {exc}")
+                errors.append(f"proxy:{kind}: {exc}")
 
     # curl_cffi — TLS fingerprint closer to Chrome (works better than plain requests on some hosts)
     try:
